@@ -22,7 +22,7 @@ WEB_APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if WEB_APP_DIR not in sys.path:
     sys.path.insert(0, WEB_APP_DIR)
 
-from unified_model_loader import MODEL_CONFIGS, load_model  # noqa: E402
+from orchard_backend.model_loader import MODEL_CONFIGS, load_model  # noqa: E402
 
 
 OUT_DIR = os.path.join(WEB_APP_DIR, "exported_onnx")
@@ -60,7 +60,7 @@ def export_one(model_type: str, opset: int = 14) -> bool:
 
 
 def main() -> None:
-    print("导出 ONNX（输入固定 1x3x224x224，与 unified_predict 验证预处理一致）\n")
+    print("导出 ONNX（输入固定 1x3x224x224，与 orchard_backend.predict 预处理一致）\n")
     types = list(MODEL_CONFIGS.keys())
     ok = 0
     for mt in types:

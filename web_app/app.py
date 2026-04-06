@@ -46,10 +46,17 @@ except ImportError as e:
     print("请确保已安装所有依赖: py -m pip install Flask werkzeug torch torchvision requests flask-socketio")
     raise
 
-from unified_predict import predict_and_annotate, predict_image
-from unified_model_loader import MODEL_CONFIGS, reload_model, get_model, get_device, APPLE_DISEASE_MODEL_PATH, APPLE_FRUIT_DISEASE_MODEL_PATH
+from orchard_backend.predict import predict_and_annotate, predict_image
+from orchard_backend.model_loader import (
+    MODEL_CONFIGS,
+    reload_model,
+    get_model,
+    get_device,
+    APPLE_DISEASE_MODEL_PATH,
+    APPLE_FRUIT_DISEASE_MODEL_PATH,
+)
 try:
-    from video_processor import process_orchard_video
+    from orchard_backend.video_processor import process_orchard_video
 except ImportError:
     process_orchard_video = None
 
@@ -1376,7 +1383,6 @@ def print_startup_banner(host, port):
         rules = [r.rule for r in app.url_map.iter_rules()]
         print(f"App文件: {os.path.abspath(__file__)}")
         print(f"路由数量: {len(rules)}")
-        print(f"路由检查: /灌溉={'/灌溉' in rules}  /irrigation={'/irrigation' in rules}  /__debug/app={'/__debug/app' in rules}")
     except Exception:
         pass
 
@@ -1969,8 +1975,6 @@ def require_login_unless_exempt():
         return None
     if path.startswith('/api/open/'):
         return None
-    if path.startswith('/__debug/'):
-        return None
     if path.startswith('/socket.io'):
         return None
     if request.method == 'OPTIONS':
@@ -2224,30 +2228,6 @@ def history():
 def irrigation():
     """智能灌溉页面（兼容中文/英文路径）"""
     return render_template('气象预警.html')
-
-@app.route('/__debug/app')
-def __debug_app():
-    """调试：确认当前运行的 app.py 路径与工作目录"""
-    return jsonify({
-        'app_file': os.path.abspath(__file__),
-        'cwd': os.getcwd(),
-        'host': DEFAULT_HOST,
-        'port': DEFAULT_PORT
-    })
-
-@app.route('/__debug/routes')
-def __debug_routes():
-    """调试：列出所有已注册路由，便于排查 404"""
-    routes = []
-    for r in app.url_map.iter_rules():
-        routes.append({
-            'rule': str(r),
-            'endpoint': r.endpoint,
-            'methods': sorted([m for m in r.methods if m in {'GET', 'POST', 'PUT', 'DELETE', 'PATCH'}])
-        })
-    routes.sort(key=lambda x: x['rule'])
-    return jsonify({'count': len(routes), 'routes': routes})
-
 
 @app.route('/api/orchard/config', methods=['GET'])
 def orchard_config_api():
@@ -3283,7 +3263,7 @@ def compress_image_for_api(image_path, max_size=1024, quality=85):
 def call_doubao_api_with_prompt(image_path, prompt):
     """使用自定义提示词调用云端视觉 API（优化版：更快速度）"""
     try:
-        from doubao_config import DOUBAO_API_KEY, DOUBAO_API_ENDPOINT, DOUBAO_MODEL, check_config
+        from orchard_backend.doubao_config import DOUBAO_API_KEY, DOUBAO_API_ENDPOINT, DOUBAO_MODEL, check_config
     except ImportError:
         DOUBAO_API_KEY = os.getenv('DOUBAO_API_KEY', '')
         DOUBAO_API_ENDPOINT = os.getenv('DOUBAO_API_ENDPOINT', 'https://ark.cn-beijing.volces.com/api/v3/chat/completions')
@@ -3390,7 +3370,7 @@ def _parse_agri_assistant_image_payload(image_b64, image_mime):
 def call_agri_assistant_llm(chat_messages, image_b64=None, image_mime='image/jpeg'):
     """文本对话；可选最后一轮用户消息带一张图（视觉）。"""
     try:
-        from doubao_config import DOUBAO_API_KEY, DOUBAO_API_ENDPOINT, DOUBAO_MODEL
+        from orchard_backend.doubao_config import DOUBAO_API_KEY, DOUBAO_API_ENDPOINT, DOUBAO_MODEL
     except ImportError:
         DOUBAO_API_KEY = os.getenv('DOUBAO_API_KEY', '')
         DOUBAO_API_ENDPOINT = os.getenv(
@@ -3398,7 +3378,7 @@ def call_agri_assistant_llm(chat_messages, image_b64=None, image_mime='image/jpe
         )
         DOUBAO_MODEL = os.getenv('DOUBAO_MODEL', 'doubao-seed-1-6-251015')
     if not DOUBAO_API_KEY or DOUBAO_API_KEY == 'your-api-key-here':
-        return None, '未配置 API 密钥：请在 web_app/doubao_config.py 中填写 DOUBAO_API_KEY'
+        return None, '未配置 API 密钥：请设置环境变量 DOUBAO_API_KEY（勿将密钥写入仓库）'
     img_raw, vision_mime, img_err = _parse_agri_assistant_image_payload(image_b64, image_mime)
     if img_err:
         return None, img_err
@@ -3590,12 +3570,12 @@ def call_doubao_api(image_path):
     
     使用前请配置API密钥：
     1. 设置环境变量：set DOUBAO_API_KEY=你的密钥
-    2. 或修改 doubao_config.py 文件中的配置
+    2. 或设置环境变量 DOUBAO_API_KEY / DOUBAO_MODEL 等（见 orchard_backend/doubao_config.py）
     """
     try:
         # 导入配置
         try:
-            from doubao_config import DOUBAO_API_KEY, DOUBAO_API_ENDPOINT, DOUBAO_MODEL, check_config
+            from orchard_backend.doubao_config import DOUBAO_API_KEY, DOUBAO_API_ENDPOINT, DOUBAO_MODEL, check_config
         except ImportError:
             # 如果配置文件不存在，使用默认配置
             DOUBAO_API_KEY = os.getenv('DOUBAO_API_KEY', '')
@@ -4543,15 +4523,14 @@ def get_camera_device_name(device_id):
 
 @app.route('/api/capture_photo', methods=['POST'])
 def capture_photo():
-    """拍照功能：保存当前视频帧到appleresult文件夹"""
+    """拍照功能：保存当前视频帧到 data/captures"""
     try:
         data = request.get_json()
         if not data or 'image_data' not in data:
             return jsonify({'success': False, 'error': '缺少图片数据'}), 400
         
-        # 创建appleresult文件夹（如果不存在）
-        apple_result_folder = os.path.join(BASE_DIR, 'appleresult')
-        os.makedirs(apple_result_folder, exist_ok=True)
+        capture_dir = os.path.join(BASE_DIR, 'data', 'captures')
+        os.makedirs(capture_dir, exist_ok=True)
         
         # 解码base64图片数据
         image_data = data['image_data']
@@ -4564,9 +4543,9 @@ def capture_photo():
         from datetime import datetime
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')[:-3]  # 精确到毫秒
         filename = f'apple_{timestamp}.jpg'
-        filepath = os.path.join(apple_result_folder, filename)
+        filepath = os.path.join(capture_dir, filename)
         
-        # 保存图片到appleresult文件夹
+        # 保存到 data/captures
         with open(filepath, 'wb') as f:
             f.write(image_bytes)
         

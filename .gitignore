@@ -25,6 +25,7 @@ desktop.ini
 *.log
 web_app/uploads/
 web_app/static/uploads/
+web_app/data/captures/
 web_app/agri_data.db
 web_app/recognition_history.json
 

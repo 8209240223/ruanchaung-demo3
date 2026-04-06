@@ -1,6 +1,6 @@
 # 苹果检测模型说明
 
-## 框选优先模式（video_processor.py 中 APPLE_ACCURACY_FIRST=True）
+## 框选优先模式（`orchard_backend/video_processor.py` 中 `APPLE_ACCURACY_FIRST=True`）
 
 - 优先保证**苹果框选准确**：YOLOv8m + 多尺度 1280/640，每 2 帧检测
 - 成熟度/病害识别精度次要
