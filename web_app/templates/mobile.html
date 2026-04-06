@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧农业 - 移动终端</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+
+<body>
+    {% include '_auth_user_strip.html' %}
+    <!-- 极客背景粒子 (手机外部) -->
+    <div class="bg-decoration">
+        <div class="orb orb-1" style="width:500px; height:500px; top:-10%; left:-10%;"></div>
+        <div class="orb orb-2" style="width:600px; height:600px; bottom:-10%; right:-10%; background: var(--accent);">
+        </div>
+    </div>
+
+    <!-- 手机外壳容器 -->
+    <div class="phone-frame">
+        <!-- 刘海屏 -->
+        <div class="phone-notch"></div>
+
+        <!-- 内部滚动区域 -->
+        <div class="mobile-scroll-area">
+            <div class="status-bar">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div
+                        style="width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 8px var(--primary);">
+                    </div>
+                    <span style="font-weight: 800; letter-spacing: 0.5px;">终端 v1.0</span>
+                </div>
+                <div class="device-status">📡 5G</div>
+            </div>
+
+            <div class="mobile-container">
+                <!-- 欢迎卡片 -->
+                <div class="card" style="background: linear-gradient(135deg, rgba(0, 255, 157, 0.1), rgba(0,0,0,0));">
+                    <h1 style="font-size: 1.5rem; margin-bottom: 5px;">你好, 管理员</h1>
+                    <p style="color: var(--text-dim); font-size: 0.8rem;">区域: 农田示范区 A-01</p>
+                </div>
+
+                <!-- 统计面板 -->
+                <div class="stats-section">
+                    <h3 style="color: var(--accent); font-size: 1rem; margin-bottom: 15px;">核心实时数据</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <p style="font-size: 0.7rem; opacity: 0.7;">今日巡检</p>
+                            <p class="stat-value">128 <small style="font-size: 0.7rem; opacity: 0.5;">次</small></p>
+                        </div>
+                        <div>
+                            <p style="font-size: 0.7rem; opacity: 0.7;">识别率</p>
+                            <p class="stat-value">94.5 <small style="font-size: 0.7rem; opacity: 0.5;">%</small></p>
+                        </div>
+                    </div>
+                </div>
+
+                <h2
+                    style="margin: 20px 0 15px; font-size: 1.1rem; border-left: 3px solid var(--primary); padding-left: 10px;">
+                    功能中心</h2>
+
+                <!-- 功能卡片区 -->
+                <div class="function-cards">
+                    <div class="card" onclick="navigateToPage('无人机控制')" style="--i:0">
+                        <div class="card-icon">🎮</div>
+                        <div class="card-title">远程驾驶</div>
+                        <div class="card-desc">实时实时图传</div>
+                    </div>
+
+                    <div class="card" onclick="navigateToPage('任务规划')" style="--i:1">
+                        <div class="card-icon">🛰️</div>
+                        <div class="card-title">任务规划</div>
+                        <div class="card-desc">A*算法路径</div>
+                    </div>
+
+                    <div class="card" onclick="navigateToPage('识别')" style="--i:1">
+                        <div class="card-icon">🌾</div>
+                        <div class="card-title">作物识别</div>
+                        <div class="card-desc">AI智能分类</div>
+                    </div>
+
+                    <div class="card" onclick="navigateToPage('成熟度')" style="--i:2">
+                        <div class="card-icon">🍎</div>
+                        <div class="card-title">成熟度评估</div>
+                        <div class="card-desc">状态精准分析</div>
+                    </div>
+
+                    <div class="card" onclick="navigateToPage('病虫害')" style="--i:3">
+                        <div class="card-icon">🔍</div>
+                        <div class="card-title">病虫害诊断</div>
+                        <div class="card-desc">特征自动抓取</div>
+                    </div>
+
+                    <div class="card" onclick="navigateToPage('用药')" style="--i:4">
+                        <div class="card-icon">💊</div>
+                        <div class="card-title">用药建议</div>
+                        <div class="card-desc">定制化施药</div>
+                    </div>
+
+                    <div class="card" onclick="navigateToPage('气象')" style="--i:5">
+                        <div class="card-icon">🌤️</div>
+                        <div class="card-title">气象预警</div>
+                        <div class="card-desc">实时微气候</div>
+                    </div>
+
+                    <div class="card" onclick="navigateToPage('历史')" style="--i:6">
+                        <div class="card-icon">📋</div>
+                        <div class="card-title">历史追溯</div>
+                        <div class="card-desc">记录闭环</div>
+                    </div>
+
+                    <div class="card" onclick="navigateToPage('视频分析')" style="--i:7">
+                        <div class="card-icon">🎬</div>
+                        <div class="card-title">视频分析</div>
+                        <div class="card-desc">果园视频智能分析</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部导航 -->
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="window.location.href='/'">
+                <div class="nav-icon">🏠</div>
+                <div class="nav-text">首页</div>
+            </div>
+            <div class="nav-item">
+                <div class="nav-icon">📊</div>
+                <div class="nav-text">数据</div>
+            </div>
+            <div class="nav-item" onclick="window.location.href='/admin'">
+                <div class="nav-icon">⚙️</div>
+                <div class="nav-text">管理</div>
+            </div>
+        </nav>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/mobile.js') }}"></script>
+</body>
+
+</html>

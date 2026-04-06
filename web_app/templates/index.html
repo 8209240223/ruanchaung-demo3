@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧农业 - 统一管理系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/agri-assistant.css') }}">
+</head>
+
+<body>
+    {% include '_auth_user_strip.html' %}
+    <!-- 极客感背景粒子装饰 -->
+    <div class="bg-decoration">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>🌾 智慧农业统一管理系统</h1>
+            <p class="subtitle">无人机智能巡检与精准作业平台</p>
+        </header>
+
+        <main>
+            <!-- 系统入口 -->
+            <div class="entry-section">
+                <h2>系统入口</h2>
+                <div class="entry-cards">
+                    <div class="entry-card" onclick="window.location.href='/mobile'">
+                        <div class="entry-icon">📱</div>
+                        <div class="entry-title">移动端</div>
+                        <div class="entry-desc">田间作业人员使用</div>
+                    </div>
+                    <div class="entry-card" onclick="window.location.href='/admin'">
+                        <div class="entry-icon">💻</div>
+                        <div class="entry-title">后台管理</div>
+                        <div class="entry-desc">管理人员使用</div>
+                    </div>
+                    <div class="entry-card" onclick="window.location.href='/dashboard'">
+                        <div class="entry-icon">📊</div>
+                        <div class="entry-title">数据大屏</div>
+                        <div class="entry-desc">数据可视化展示</div>
+                    </div>
+                    <div class="entry-card" onclick="window.location.href='/无人机控制'">
+                        <div class="entry-icon">🎮</div>
+                        <div class="entry-title">远程驾驶</div>
+                        <div class="entry-desc">无人机实时控制台</div>
+                    </div>
+                    <div class="entry-card" onclick="window.location.href='/病虫害'">
+                        <div class="entry-icon">🛡️</div>
+                        <div class="entry-title">风险预警</div>
+                        <div class="entry-desc">病虫害风险与防治窗口</div>
+                    </div>
+                    <div class="entry-card" onclick="window.location.href='/irrigation'">
+                        <div class="entry-icon">💧</div>
+                        <div class="entry-title">智能灌溉</div>
+                        <div class="entry-desc">分区灌溉处方与优先级</div>
+                    </div>
+                    <div class="entry-card" onclick="window.location.href='/任务规划'">
+                        <div class="entry-icon">🗂️</div>
+                        <div class="entry-title">任务编排</div>
+                        <div class="entry-desc">任务创建与状态回传</div>
+                    </div>
+                    <div class="entry-card" onclick="window.location.href='/orchard_map'">
+                        <div class="entry-icon">🗺️</div>
+                        <div class="entry-title">果园多机地图</div>
+                        <div class="entry-desc">俯瞰地图调度与避障策略</div>
+                    </div>
+                    <div class="entry-card" onclick="window.location.href='/视频分析'">
+                        <div class="entry-icon">🎬</div>
+                        <div class="entry-title">视频分析</div>
+                        <div class="entry-desc">果园视频苹果检测、成熟度与病虫害识别</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 模型选择区域 -->
+            <div class="model-selection-section">
+                <h2>模型识别功能</h2>
+                <div class="model-cards" id="modelCards">
+                    <!-- 模型卡片将通过JavaScript动态生成 -->
+                </div>
+            </div>
+
+            <!-- 上传区域重构 -->
+            <div class="upload-section">
+                <div class="upload-container" id="uploadBox">
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+
+                    <!-- 动态科技扫描图标（未上传时显示） -->
+                    <div class="scanner-icon" id="scannerIcon">
+                        <div class="scanner-frame"></div>
+                        <div class="scanner-line"></div>
+                        <div class="plus-icon">+</div>
+                    </div>
+
+                    <!-- 上传的图片预览（上传后显示） -->
+                    <img id="uploadPreview"
+                        style="display: none; max-width: 100%; max-height: 400px; border-radius: 15px; object-fit: contain;">
+
+                    <!-- 上传信息（未上传时显示） -->
+                    <div class="upload-info" id="uploadInfo">
+                        <h3 class="upload-main-text">上传农田影像数据</h3>
+                        <p class="upload-sub-text">点击或拖拽至此，支持 4K 高清 JPG/PNG 影像</p>
+                    </div>
+                </div>
+
+                <div class="btn-group-center">
+                    <button id="uploadBtn" class="btn-primary" style="display: none;">
+                        <span class="btn-glow"></span>
+                        <span class="btn-text">🚀 启动 AI 深度诊断引擎</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 预览区域 -->
+            <div class="preview-section" id="previewSection" style="display: none;">
+                <h2>原图预览</h2>
+                <div class="image-container">
+                    <img id="previewImage" src="" alt="预览图片">
+                </div>
+            </div>
+
+            <!-- 结果区域 -->
+            <div class="result-section" id="resultSection" style="display: none;">
+                <h2>检测结果</h2>
+
+                <!-- 模型信息 -->
+                <div class="model-info" id="modelInfo"></div>
+
+                <!-- 主要结果 -->
+                <div class="result-card">
+                    <div class="result-header">
+                        <span class="result-label">类别：</span>
+                        <span class="result-value" id="resultClass"></span>
+                    </div>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" id="confidenceFill"></div>
+                        <span class="confidence-text" id="confidenceText"></span>
+                    </div>
+                    <p class="result-description" id="resultDescription"></p>
+                </div>
+
+                <!-- 详细概率 -->
+                <div class="probability-section">
+                    <h3>各类别概率</h3>
+                    <div class="probability-list" id="probabilityList"></div>
+                </div>
+
+                <!-- 标注后的图片 -->
+                <div class="annotated-section">
+                    <h3>标注结果</h3>
+                    <div class="image-container">
+                        <img id="annotatedImage" src="" alt="标注后的图片">
+                    </div>
+                </div>
+
+                <!-- AI建议区域 -->
+                <div class="ai-suggestion-section" id="aiSuggestionSection" style="display: none;">
+                    <h3>🤖 AI专业建议</h3>
+                    <div class="ai-suggestion-card" id="aiSuggestionCard">
+                        <div class="ai-loading" id="aiLoading" style="display: none;">
+                            <div class="spinner"></div>
+                            <p>AI正在分析中，请稍候...</p>
+                        </div>
+                        <div class="ai-content" id="aiContent" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <div class="ai-suggestion-section" id="actionPlanSection" style="display: none;">
+                    <h3>🎯 行动建议卡片</h3>
+                    <div class="ai-suggestion-card" id="actionPlanCard"></div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="action-buttons"
+                    style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
+                    <button id="resetBtn" class="btn btn-secondary">重新上传</button>
+                    <button id="deleteBtn" class="btn btn-danger">🗑️ 删除</button>
+                </div>
+            </div>
+
+            <!-- 加载提示 -->
+            <div class="loading" id="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>正在分析图片，请稍候...</p>
+            </div>
+
+            <!-- 错误提示 -->
+            <div class="error-message" id="errorMessage" style="display: none;"></div>
+        </main>
+
+        <!-- 悬浮农业 AI 助手 -->
+        <div id="agri-assistant-widget" class="agri-asst">
+            <button type="button" id="agri-asst-fab" class="agri-asst-fab" aria-label="打开农业智能助手" aria-expanded="false"
+                aria-controls="agri-asst-panel">🌾</button>
+            <div id="agri-asst-panel" class="agri-asst-panel" role="dialog" aria-labelledby="agri-asst-title">
+                <div class="agri-asst-head">
+                    <div class="agri-asst-head-title">
+                        <strong id="agri-asst-title">农业智能助手</strong>
+                        <span>种植 · 植保 · 灌溉 · 农事咨询（极速简答）</span>
+                    </div>
+                    <button type="button" id="agri-asst-close" class="agri-asst-close" aria-label="关闭对话">×</button>
+                </div>
+                <div id="agri-asst-messages" class="agri-asst-messages">
+                    <div class="agri-asst-msg agri-asst-msg--hint">您好，可直接提问；可上传作物照片分析；🎤 需 Chrome/Edge 并允许麦克风。</div>
+                </div>
+                <div id="agri-asst-preview" class="agri-asst-preview">
+                    <img id="agri-asst-preview-img" alt="预览">
+                    <span>已选图片，将随下一条消息发送</span>
+                    <button type="button" class="agri-asst-preview-remove" id="agri-asst-preview-remove">移除</button>
+                </div>
+                <div class="agri-asst-foot">
+                    <div class="agri-asst-toolbar">
+                        <button type="button" id="agri-asst-img" class="agri-asst-tool" title="上传图片">🖼</button>
+                        <button type="button" id="agri-asst-mic" class="agri-asst-tool" title="语音输入（中文）">🎤</button>
+                    </div>
+                    <div class="agri-asst-foot-main">
+                        <textarea id="agri-asst-input" class="agri-asst-input" rows="1" placeholder="文字或语音输入，Enter 发送"
+                            maxlength="2000"></textarea>
+                    </div>
+                    <button type="button" id="agri-asst-send" class="agri-asst-send">发送</button>
+                </div>
+                <input type="file" id="agri-asst-file" accept="image/*" hidden>
+            </div>
+        </div>
+
+        <footer>
+            <p>智慧农业 - 无人机智能巡检与精准作业系统</p>
+            <div class="footer-stats">
+                <div class="stat-pill">成本降低 60%</div>
+                <div class="stat-pill">农药减少 30%</div>
+                <div class="stat-pill">准确率提升 15%</div>
+                <div class="stat-pill">响应时间 ≤ 3秒</div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/agri-assistant.js') }}"></script>
+</body>
+
+</html>

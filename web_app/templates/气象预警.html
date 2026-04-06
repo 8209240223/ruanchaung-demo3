@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能灌溉建议 - 智慧农业</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/识别页面.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <style>
+        .irrigation-label {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .irrigation-label .label-text {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        #locationMap {
+            width: 100%;
+            height: 280px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    {% include '_auth_user_strip.html' %}
+    <div class="bg-decoration">
+        <div class="orb orb-1" style="width:300px; height:300px; top:10%; right:10%;"></div>
+        <div class="orb orb-2" style="width:400px; height:400px; bottom:10%; left:-5%;"></div>
+    </div>
+
+    <div class="page-container">
+        <a href="/" class="btn-back">返回</a>
+
+        <header>
+            <h1>💧 智能灌溉建议</h1>
+            <p style="color:var(--text-dim)">按地块、作物生长阶段和土壤湿度生成分区灌溉处方</p>
+        </header>
+
+        <main>
+            <div class="card-glass">
+                <h2>灌溉参数输入</h2>
+                <p style="color:var(--text-dim); font-size:0.9rem; margin-bottom:12px;">填写地块与当前环境数据，用于生成分区灌溉建议</p>
+                <div class="irrigation-input-grid"
+                    style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px 20px; margin-top: 12px;">
+                    <label class="irrigation-label">
+                        <span class="label-text">地块名称</span>
+                        <input id="plotName" placeholder="如 A区、B区" value="A区"
+                            style="padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: #fff; width:100%; box-sizing:border-box;">
+                    </label>
+                    <label class="irrigation-label">
+                        <span class="label-text">作物类型</span>
+                        <input id="cropType" placeholder="如 苹果、番茄" value="苹果"
+                            style="padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: #fff; width:100%; box-sizing:border-box;">
+                    </label>
+                    <label class="irrigation-label">
+                        <span class="label-text">生长阶段</span>
+                        <select id="growthStage"
+                            style="padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: #fff; width:100%; box-sizing:border-box;">
+                            <option value="苗期">苗期</option>
+                            <option value="生长期">生长期</option>
+                            <option value="结果期" selected>结果期</option>
+                        </select>
+                    </label>
+                    <label class="irrigation-label">
+                        <span class="label-text">土壤湿度 <small style="opacity:0.8;">(%)</small></span>
+                        <input id="soilMoisture" type="number" step="0.1" min="0" max="100" placeholder="0–100"
+                            value="52"
+                            style="padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: #fff; width:100%; box-sizing:border-box;">
+                    </label>
+                    <label class="irrigation-label">
+                        <span class="label-text">气温 <small style="opacity:0.8;">(°C)</small></span>
+                        <input id="temperature" type="number" step="0.1" placeholder="当日或近期" value="28"
+                            style="padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: #fff; width:100%; box-sizing:border-box;">
+                    </label>
+                    <label class="irrigation-label">
+                        <span class="label-text">今日降水量 <small style="opacity:0.8;">(mm)</small></span>
+                        <input id="rainfall" type="number" step="0.1" min="0" placeholder="如 0、2、5" value="2"
+                            style="padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: #fff; width:100%; box-sizing:border-box;">
+                    </label>
+                </div>
+                <div id="weatherStatus"
+                    style="margin-top:12px; font-size:0.85rem; color:var(--text-dim); min-height:1.2em;"></div>
+                <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top: 14px;">
+                    <button type="button" id="fetchWeatherBtn" class="btn-action"
+                        style="margin-top:0; background:rgba(255,255,255,0.08); border:1px solid var(--glass-border);">
+                        <span>📍 获取当前位置与天气</span>
+                    </button>
+                    <button id="createPlanBtn" class="btn-action" style="margin-top:0;">
+                        <span>生成灌溉建议</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card-glass">
+                <h2>📍 当前位置</h2>
+                <p style="color:var(--text-dim); font-size:0.9rem; margin-bottom:10px;">点击「获取当前位置与天气」后，将在此显示您在地图上的位置</p>
+                <div id="locationMap"></div>
+            </div>
+
+            <div class="card-glass" style="border-left: 5px solid var(--primary);">
+                <h2>本次建议</h2>
+                <div id="planResult" style="color: var(--text-bright);">暂无建议，请先生成。</div>
+            </div>
+
+            <div class="card-glass">
+                <h2>最近灌溉记录</h2>
+                <div id="planHistory" style="display:grid; gap: 10px;"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="{{ url_for('static', filename='js/气象预警.js') }}"></script>
+</body>
+
+</html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>智能农业果园平台 — 总体架构图</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f1412;
+      --panel: #1a2220;
+      --border: #2d3d36;
+      --text: #e8f0ec;
+      --muted: #8fa99a;
+      --accent: #7cb87c;
+      --accent2: #c4a35a;
+      --socket: #6b9bd1;
+      --ai: #b87cba;
+      --data: #5a9e9e;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "DM Sans", system-ui, sans-serif;
+      font-optical-sizing: auto;
+      padding: 2rem 1.5rem 3rem;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124, 184, 124, 0.12), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(90, 158, 158, 0.08), transparent);
+    }
+
+    header {
+      max-width: 1100px;
+      margin: 0 auto 2rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.25rem;
+    }
+
+    h1 {
+      font-family: "Fraunces", Georgia, serif;
+      font-weight: 700;
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      margin: 0 0 0.35rem;
+      letter-spacing: -0.02em;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .diagram {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .layer-title {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 11px;
+      font-weight: 600;
+      fill: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .box {
+      fill: var(--panel);
+      stroke: var(--border);
+      stroke-width: 1.5;
+      rx: 8;
+    }
+
+    .box.ai {
+      stroke: var(--ai);
+      stroke-opacity: 0.5;
+    }
+
+    .box.socket {
+      stroke: var(--socket);
+      stroke-opacity: 0.5;
+    }
+
+    .box.data {
+      stroke: var(--data);
+      stroke-opacity: 0.5;
+    }
+
+    .box.ext {
+      stroke: var(--accent2);
+      stroke-opacity: 0.45;
+    }
+
+    .label {
+      fill: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .detail {
+      fill: var(--muted);
+      font-size: 10px;
+    }
+
+    .arrow {
+      fill: none;
+      stroke: var(--muted);
+      stroke-width: 1.25;
+      stroke-dasharray: 4 3;
+      opacity: 0.7;
+    }
+
+    .arrow-solid {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 1.5;
+      opacity: 0.85;
+    }
+
+    marker#arr path {
+      fill: var(--accent);
+    }
+
+    marker#arr2 path {
+      fill: var(--muted);
+    }
+
+    .legend {
+      max-width: 1100px;
+      margin: 1.75rem auto 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem 1.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>智能农业果园管理平台 · 总体架构</h1>
+    <p class="sub">对应仓库 <code style="color: var(--accent);">web_app/</code>：Flask 统一后端、多业务页面、PyTorch 推理、SQLite
+      与文件数据、SocketIO 实时通道及外部地图服务。</p>
+  </header>
+
+  <div class="diagram">
+    <svg viewBox="0 0 1000 720" xmlns="http://www.w3.org/2000/svg" aria-label="系统总体架构图">
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 z" />
+        </marker>
+        <marker id="arr2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 z" fill="#8fa99a" />
+        </marker>
+      </defs>
+
+      <!-- 用户层 -->
+      <text x="40" y="28" class="layer-title">用户与终端</text>
+      <rect class="box" x="40" y="38" width="200" height="72" />
+      <text x="140" y="68" text-anchor="middle" class="label">Web 浏览器</text>
+      <text x="140" y="88" text-anchor="middle" class="detail">访问各功能页、管理端</text>
+      <rect class="box" x="260" y="38" width="200" height="72" />
+      <text x="360" y="68" text-anchor="middle" class="label">移动端视图</text>
+      <text x="360" y="88" text-anchor="middle" class="detail">mobile.html 等适配</text>
+
+      <!-- 表现层 -->
+      <text x="40" y="148" class="layer-title">表现层（templates / static）</text>
+      <rect class="box" x="40" y="158" width="920" height="100" />
+      <text x="60" y="188" class="label">Jinja2 页面</text>
+      <text x="60" y="208" class="detail">index · dashboard · 识别页面 · 病虫害诊断 · 视频分析</text>
+      <text x="60" y="228" class="detail">果园地图 · 无人机控制 · 气象预警 · 历史记录 · 任务规划 · admin</text>
+      <text x="520" y="188" class="label">静态资源</text>
+      <text x="520" y="208" class="detail">CSS（dashboard / style / admin）· JS（main、识别、地图、视频、Socket 客户端等）</text>
+
+      <!-- 应用层 -->
+      <text x="40" y="298" class="layer-title">应用层（Flask app.py）</text>
+      <rect class="box" x="40" y="308" width="440" height="120" />
+      <text x="60" y="338" class="label">HTTP 路由与业务编排</text>
+      <text x="60" y="358" class="detail">页面渲染 · REST / JSON API（任务、果园配置、开放接口等）</text>
+      <text x="60" y="378" class="detail">文件上传（图片 / 视频）· 鉴权与角色（viewer ~ admin）</text>
+      <text x="60" y="398" class="detail">操作日志、审计、与数据库事务</text>
+
+      <rect class="box socket" x="500" y="308" width="220" height="120" />
+      <text x="610" y="345" text-anchor="middle" class="label">Flask-SocketIO</text>
+      <text x="610" y="368" text-anchor="middle" class="detail">threading + polling</text>
+      <text x="610" y="388" text-anchor="middle" class="detail">视频流推送 · 实时状态</text>
+      <text x="610" y="408" text-anchor="middle" class="detail">与摄像头 / IP 流联动</text>
+
+      <rect class="box" x="740" y="308" width="220" height="120" />
+      <text x="850" y="345" text-anchor="middle" class="label">视频与图像处理</text>
+      <text x="850" y="368" text-anchor="middle" class="detail">OpenCV（cv2）</text>
+      <text x="850" y="388" text-anchor="middle" class="detail">video_processor</text>
+      <text x="850" y="408" text-anchor="middle" class="detail">果园视频分析管线</text>
+
+      <!-- AI -->
+      <text x="40" y="468" class="layer-title">智能推理层</text>
+      <rect class="box ai" x="40" y="478" width="280" height="100" />
+      <text x="180" y="510" text-anchor="middle" class="label">unified_model_loader</text>
+      <text x="180" y="532" text-anchor="middle" class="detail">PyTorch 模型加载与配置</text>
+      <text x="180" y="552" text-anchor="middle" class="detail">Demo1/Demo2 与苹果病害权重路径</text>
+
+      <rect class="box ai" x="340" y="478" width="280" height="100" />
+      <text x="480" y="510" text-anchor="middle" class="label">unified_predict</text>
+      <text x="480" y="532" text-anchor="middle" class="detail">predict_image / predict_and_annotate</text>
+      <text x="480" y="552" text-anchor="middle" class="detail">成熟度 · 叶片 / 果实病害等推理</text>
+
+      <rect class="box ai" x="640" y="478" width="320" height="100" />
+      <text x="800" y="505" text-anchor="middle" class="label">离线训练（apple/）</text>
+      <text x="800" y="525" text-anchor="middle" class="detail">train_apple_disease · train_apple_fruit_disease</text>
+      <text x="800" y="545" text-anchor="middle" class="detail">产出 best_model.pth → models 目录供线上加载</text>
+
+      <!-- 数据与外部 -->
+      <text x="40" y="608" class="layer-title">数据与外部服务</text>
+      <rect class="box data" x="40" y="618" width="200" height="88" />
+      <text x="140" y="648" text-anchor="middle" class="label">SQLite</text>
+      <text x="140" y="668" text-anchor="middle" class="detail">agri_data.db</text>
+      <text x="140" y="686" text-anchor="middle" class="detail">任务、日志、业务表</text>
+
+      <rect class="box data" x="260" y="618" width="200" height="88" />
+      <text x="360" y="648" text-anchor="middle" class="label">文件与 GeoJSON</text>
+      <text x="360" y="668" text-anchor="middle" class="detail">uploads / 视频目录</text>
+      <text x="360" y="686" text-anchor="middle" class="detail">data/orchard.geojson</text>
+
+      <rect class="box data" x="480" y="618" width="200" height="88" />
+      <text x="580" y="648" text-anchor="middle" class="label">JSON 记录</text>
+      <text x="580" y="668" text-anchor="middle" class="detail">recognition_history.json</text>
+      <text x="580" y="686" text-anchor="middle" class="detail">识别历史持久化</text>
+
+      <rect class="box ext" x="700" y="618" width="260" height="88" />
+      <text x="830" y="648" text-anchor="middle" class="label">外部接口</text>
+      <text x="830" y="668" text-anchor="middle" class="detail">高德地图 JS（AMAP_JS_KEY）</text>
+      <text x="830" y="686" text-anchor="middle" class="detail">requests 等 HTTP 调用</text>
+
+      <!-- Arrows: user -> presentation -->
+      <path class="arrow-solid" d="M140 110 L140 158" marker-end="url(#arr)" />
+      <path class="arrow-solid" d="M360 110 L360 158" marker-end="url(#arr)" />
+
+      <!-- presentation -> app -->
+      <path class="arrow-solid" d="M500 258 L500 308" marker-end="url(#arr)" />
+
+      <!-- app -> AI -->
+      <path class="arrow" d="M260 428 L260 478" marker-end="url(#arr2)" />
+      <path class="arrow" d="M480 428 L480 478" marker-end="url(#arr2)" />
+
+      <!-- model loader -> predict (internal) -->
+      <path class="arrow" d="M320 528 L340 528" marker-end="url(#arr2)" />
+
+      <!-- app -> data -->
+      <path class="arrow" d="M200 428 L140 618" marker-end="url(#arr2)" />
+      <path class="arrow" d="M280 428 L360 618" marker-end="url(#arr2)" />
+      <path class="arrow" d="M360 428 L580 618" marker-end="url(#arr2)" />
+
+      <!-- app -> external -->
+      <path class="arrow" d="M420 428 L830 618" marker-end="url(#arr2)" />
+
+      <!-- socket vertical tie -->
+      <path class="arrow" d="M610 308 L610 258" stroke="#6b9bd1" stroke-width="1" stroke-dasharray="3 2" fill="none"
+        opacity="0.6" />
+    </svg>
+  </div>
+
+  <div class="legend">
+    <span><i class="dot" style="background: var(--accent);"></i> 主请求 / 页面数据流</span>
+    <span><i class="dot" style="background: var(--muted);"></i> 推理、存储与外部调用</span>
+    <span><i class="dot" style="background: var(--socket);"></i> SocketIO 与页面实时交互</span>
+    <span><i class="dot" style="background: var(--ai);"></i> PyTorch 模型相关</span>
+  </div>
+</body>
+
+</html>

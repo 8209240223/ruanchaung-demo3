@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>病虫害诊断 - 智慧农业</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/识别页面.css') }}">
+</head>
+
+<body>
+    {% include '_auth_user_strip.html' %}
+    <div class="bg-decoration">
+        <div class="orb orb-1" style="width:300px; height:300px; top:10%; right:10%; background: #ff3e3e;"></div>
+        <div class="orb orb-2" style="width:400px; height:400px; bottom:10%; left:-5%; background: #bd00ff;"></div>
+    </div>
+
+    <div class="page-container">
+        <a href="/" class="btn-back">返回</a>
+
+        <header>
+            <h1>病虫害智能诊断</h1>
+            <p style="color:var(--text-dim)">实时捕捉病害特征，精准锁定病原体，为农田健康保驾护航</p>
+        </header>
+
+        <main>
+            <!-- 诊断区域 -->
+            <div class="card-glass">
+                <div style="margin-bottom: 16px;">
+                    <label style="color: var(--text-dim); font-size: 0.95rem;">识别类型：</label>
+                    <div style="display: flex; gap: 20px; margin-top: 8px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="modelType" value="apple_disease" checked>
+                            <span>叶片病害</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="modelType" value="apple_fruit_disease">
+                            <span>果实病害</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="upload-box" id="uploadBox">
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                    <p style="font-size: 1.5rem; font-weight: 900; color:#fff; letter-spacing: 2px;">点击或拍摄病虫害部位</p>
+                    <p style="color:var(--text-dim); margin-top: 15px; font-size: 1rem;">上传后点击「启动识别」使用本地模型，可选「获取详细建议」调用
+                        AI 分析</p>
+                </div>
+                <button id="diagnoseBtn" class="btn-action" style="display: none;">
+                    <span>启动识别</span>
+                </button>
+            </div>
+
+            <!-- 预览区域 -->
+            <div id="previewSection" class="card-glass" style="display: none; text-align: center;">
+                <h2>待诊断影像</h2>
+                <div class="image-container"
+                    style="max-width: 100%; overflow: hidden; border-radius: 20px; margin-top: 15px;">
+                    <img id="previewImage" src="" alt="预览图片"
+                        style="max-width: 100%; border: 4px solid var(--glass-border);">
+                </div>
+            </div>
+
+            <!-- 诊断结果区域 -->
+            <div id="resultSection" class="card-glass" style="display: none;">
+                <h2 style="color: var(--primary);">识别结果</h2>
+
+                <div class="result-card"
+                    style="background: rgba(255,255,255,0.02); padding: 25px; border-radius: 20px; margin-top: 20px;">
+                    <div id="diagnosisResult" style="line-height: 2; color: #e2e8f0; font-size: 1.05rem;">
+                        <!-- 本地模型识别结果 -->
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <button id="aiDetailBtn" type="button" class="btn-action" style="width: 100%;">
+                        <span>获取详细建议</span>
+                    </button>
+                    <p style="color: var(--text-dim); font-size: 0.9rem; margin-top: 8px;">点击后由 AI 对当前图片生成详细分析与防治建议</p>
+                    <div id="aiDetailLoading" style="display: none; text-align: center; padding: 15px;">
+                        <div class="spinner"
+                            style="border: 3px solid rgba(255,62,62,0.2); border-top: 3px solid #ff3e3e; border-radius: 50%; width: 36px; height: 36px; animation: spin 1s linear infinite; margin: 0 auto 10px;">
+                        </div>
+                        <span style="color: var(--primary);">正在生成详细建议…</span>
+                    </div>
+                    <div id="aiDetailResult" class="result-card"
+                        style="display: none; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 16px; margin-top: 12px; line-height: 1.8; color: #e2e8f0; font-size: 1rem;">
+                        <!-- 详细建议显示在这里 -->
+                    </div>
+                </div>
+
+                <button id="resetBtn" class="btn-back"
+                    style="margin-top: 30px; width: 100%; justify-content: center; background: rgba(255,255,255,0.1);">重新上传诊断</button>
+            </div>
+
+            <!-- 加载中 -->
+            <div id="loading" style="display: none; text-align: center; padding: 50px;">
+                <div class="spinner"
+                    style="border: 4px solid rgba(255,62,62,0.1); border-top: 4px solid #ff3e3e; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px;">
+                </div>
+                <p style="color: var(--primary); font-weight: 800; letter-spacing: 2px;">正在深度分析中...</p>
+            </div>
+
+            <div id="errorMessage" class="card-glass" style="display: none; border-color: #ff3e3e; color: #ff3e3e;">
+            </div>
+
+            <!-- 诊断知识库 -->
+            <div class="card-glass" style="margin-top: 30px;">
+                <h2>常见病虫害库</h2>
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 20px;">
+                    <div
+                        style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; text-align: center;">
+                        <div style="margin-top: 10px; font-weight: 600;">蚜虫害</div>
+                    </div>
+                    <div
+                        style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; text-align: center;">
+                        <div style="margin-top: 10px; font-weight: 600;">白粉病</div>
+                    </div>
+                    <div
+                        style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; text-align: center;">
+                        <div style="margin-top: 10px; font-weight: 600;">红蜘蛛</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-glass" style="border-left: 5px solid var(--primary); margin-top: 30px;">
+                <h2>专家建议</h2>
+                <p style="line-height: 1.8; color: #e2e8f0;">当前正值高发季节，请注意加强农田巡视，发现异常请及时采样识别。</p>
+            </div>
+
+            <div class="card-glass" style="margin-top: 30px;">
+                <h2>3-7天风险预警</h2>
+                <p style="color: var(--text-dim); margin-bottom: 15px;">基于温湿度和降雨条件快速生成病虫害风险等级与防治窗口。</p>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+                    <input id="riskPlot" placeholder="地块名称（如A区）" value="A区"
+                        style="padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: #fff;">
+                    <input id="riskTemp" type="number" step="0.1" placeholder="温度（°C）" value="28"
+                        style="padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: #fff;">
+                    <input id="riskHumidity" type="number" step="0.1" placeholder="湿度（%）" value="72"
+                        style="padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: #fff;">
+                    <input id="riskRainfall" type="number" step="0.1" placeholder="降雨量（mm）" value="5"
+                        style="padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: #fff;">
+                </div>
+                <button id="riskEvaluateBtn" class="btn-action" style="margin-top: 15px;">
+                    <span>生成风险预警</span>
+                </button>
+                <div id="riskAlertResult" style="margin-top: 15px; color: #e2e8f0;"></div>
+            </div>
+        </main>
+    </div>
+
+    <style>
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
+    <script src="{{ url_for('static', filename='js/病虫害诊断.js') }}"></script>
+</body>
+
+</html>

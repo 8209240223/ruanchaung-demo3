@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>无人机实时控制台 - 智慧农业</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/识别页面.css') }}">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body {
+            background: #020617;
+            overflow: hidden;
+        }
+
+        .control-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            grid-template-rows: 60px 1fr 100px;
+            height: 100vh;
+            gap: 15px;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        /* 顶栏状态 */
+        .top-status-bar {
+            grid-column: 1 / -1;
+            background: rgba(10, 20, 40, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+        }
+
+        .status-group {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+        }
+
+        .status-item {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-value {
+            color: var(--primary);
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        /* 左侧飞行数据 */
+        .left-panel-control {
+            grid-column: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* 中央视频流区域 */
+        .center-video-feed {
+            grid-column: 2;
+            background: #000;
+            border: 2px solid var(--primary);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 255, 157, 0.2);
+        }
+
+        .video-placeholder {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.7;
+            filter: grayscale(0.3) contrast(1.2);
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* OSD 覆盖层 */
+        .osd-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            padding: 30px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .osd-crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            border: 1px solid rgba(0, 255, 157, 0.5);
+            border-radius: 50%;
+        }
+
+        .osd-crosshair::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -20px;
+            width: 140px;
+            height: 1px;
+            background: rgba(0, 255, 157, 0.3);
+        }
+
+        .osd-crosshair::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: -20px;
+            width: 1px;
+            height: 140px;
+            background: rgba(0, 255, 157, 0.3);
+        }
+
+        .osd-data-box {
+            background: rgba(0, 0, 0, 0.4);
+            border-left: 3px solid var(--primary);
+            padding: 10px 15px;
+            font-family: monospace;
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+
+        /* 右侧云台/相机控制 */
+        .right-panel-control {
+            grid-column: 3;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* 底部动作栏 */
+        .bottom-action-bar {
+            grid-column: 1 / -1;
+            background: rgba(10, 20, 40, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        /* 摇杆模拟 */
+        .joystick-container {
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            margin: 0 auto;
+            position: relative;
+            border: 1px solid var(--glass-border);
+        }
+
+        .joystick-knob {
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .control-btn:hover {
+            background: var(--primary);
+            color: #000;
+        }
+
+        .control-btn.danger {
+            border-color: #ff3e3e;
+            color: #ff3e3e;
+        }
+
+        .control-btn.danger:hover {
+            background: #ff3e3e;
+            color: #fff;
+        }
+
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(0, 255, 157, 0.2);
+            box-shadow: 0 0 10px var(--primary);
+            animation: scan 4s linear infinite;
+        }
+
+        @keyframes scan {
+            from {
+                top: 0;
+            }
+
+            to {
+                top: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    {% include '_auth_user_strip.html' %}
+    <div class="control-layout">
+        <!-- 顶栏 -->
+        <header class="top-status-bar">
+            <div class="status-group">
+                <a href="/mobile" style="color:#fff; text-decoration:none; font-weight:bold;">← 退出控制</a>
+                <div class="status-item">模式: <span class="status-value">GPS 定速巡航</span></div>
+            </div>
+            <div class="status-group">
+                <div class="status-item">📡 信号: <span class="status-value">98%</span></div>
+                <div class="status-item">🛰️ 卫星: <span class="status-value">18</span></div>
+                <div class="status-item">🔋 电池: <span class="status-value" style="color:#ffc107">65% (18.5V)</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 左侧面板 -->
+        <aside class="left-panel-control">
+            <div class="card-glass" style="padding:20px;">
+                <h3 style="margin-bottom:15px; color:var(--accent);">飞行状态</h3>
+                <div style="display:grid; gap:10px;">
+                    <div class="status-item">高度 (ALT): <span class="status-value">45.2 m</span></div>
+                    <div class="status-item">速度 (SPD): <span class="status-value">8.5 m/s</span></div>
+                    <div class="status-item">距离 (DST): <span class="status-value">1240 m</span></div>
+                </div>
+            </div>
+            <div class="card-glass" style="padding:20px; flex:1;">
+                <h3 style="margin-bottom:15px; color:var(--accent);">左摇杆 (高度/转向)</h3>
+                <div class="joystick-container">
+                    <div class="joystick-knob"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 中央视频流 -->
+        <main class="center-video-feed">
+            <!-- 实时视频流显示 -->
+            <img id="videoFeed" style="width:100%; height:100%; object-fit:cover; display:none;">
+
+            <!-- 占位图（未连接时显示） -->
+            <div id="placeholderImg" class="video-placeholder"
+                style="width:100%; height:100%; background:linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative;">
+                <div style="text-align:center; color:rgba(255,255,255,0.3); font-size:1.2rem;">
+                    <div style="font-size:4rem; margin-bottom:20px;">📹</div>
+                    <div>等待视频流连接...</div>
+                </div>
+            </div>
+
+            <!-- 连接状态提示 -->
+            <div id="connectionStatus" style="position:absolute; top:20px; left:20px; z-index:1000; 
+                 background:rgba(0,0,0,0.7); padding:10px 15px; border-radius:10px; 
+                 border:2px solid var(--primary); color:var(--primary); font-weight:bold;">
+                <span id="statusText">⏳ 等待视频流连接...</span>
+            </div>
+
+            <!-- 苹果检测提示 -->
+            <div id="appleDetectionHint" style="position:absolute; bottom:20px; left:20px; z-index:1000; 
+                 background:rgba(0,0,0,0.8); padding:15px 25px; border-radius:10px; 
+                 border:2px solid var(--primary); color:var(--primary); font-weight:bold;
+                 display:none; backdrop-filter:blur(10px); box-shadow:0 0 20px rgba(0,255,157,0.3);
+                 font-family: inherit; font-size: 1rem;">
+                <div style="line-height:1.6;">
+                    ✅ 已识别到苹果<br>
+                    <span style="font-size:0.9rem; color:var(--text-dim); font-weight:normal;">点击拍照</span>
+                </div>
+            </div>
+
+            <!-- 虚拟摄像头按钮 -->
+            <button onclick="showVirtualCameraDialog()" style="position:absolute; top:20px; right:20px; z-index:999;
+                    background:rgba(255,165,0,0.2); border:2px solid #ffa500; 
+                    color:#ffa500; padding:12px 20px; border-radius:10px; 
+                    cursor:pointer; font-size:1rem; font-weight:bold; backdrop-filter:blur(10px);">
+                📹 虚拟摄像头
+            </button>
+
+            <!-- 虚拟摄像头设置对话框 -->
+            <div id="virtualCameraDialog" style="position:absolute; top:50%; left:50%; 
+                 transform:translate(-50%, -50%); z-index:10002; 
+                 background:rgba(0,0,0,0.95); padding:30px; border-radius:20px; 
+                 border:3px solid #ffa500; display:none; text-align:center;
+                 box-shadow:0 0 30px rgba(255,165,0,0.5); backdrop-filter:blur(20px);
+                 min-width:400px;">
+                <h2 style="color:#ffa500; margin-bottom:20px;">📹 虚拟摄像头设置</h2>
+                <div style="text-align:left; margin-bottom:20px; color:#fff;">
+                    <div style="margin-bottom:15px;">
+                        <label style="display:block; margin-bottom:5px;">摄像头设备ID（留空自动检测）:</label>
+                        <input type="number" id="virtualCameraDeviceId" placeholder="自动检测" style="width:100%; padding:12px; border:2px solid #ffa500; border-radius:10px; 
+                               background:rgba(255,255,255,0.1); color:#fff; font-size:1rem;">
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                    <button onclick="connectVirtualCamera()" style="padding:12px 30px; 
+                           background:#ffa500; color:#000; border:none; border-radius:10px; 
+                           cursor:pointer; font-size:1rem; font-weight:bold;">连接</button>
+                    <button onclick="listVirtualCameras()" style="padding:12px 30px; 
+                           background:rgba(255,255,255,0.1); color:#ffa500; border:2px solid #ffa500; 
+                           border-radius:10px; cursor:pointer; font-size:1rem; font-weight:bold;">检测设备</button>
+                    <button onclick="stopVirtualCamera()" style="padding:12px 30px; 
+                           background:rgba(255,0,0,0.2); color:#ff3e3e; border:2px solid #ff3e3e; 
+                           border-radius:10px; cursor:pointer; font-size:1rem; font-weight:bold;">停止</button>
+                    <button onclick="closeVirtualCameraDialog()" style="padding:12px 30px; 
+                           background:rgba(255,255,255,0.1); color:#fff; border:2px solid #fff; 
+                           border-radius:10px; cursor:pointer; font-size:1rem; font-weight:bold;">取消</button>
+                </div>
+                <div id="virtualCameraStatus" style="margin-top:15px; color:#00ff9d; font-size:0.9rem;"></div>
+            </div>
+
+            <div class="scan-line"></div>
+
+            <div class="osd-overlay">
+                <div style="display:flex; justify-content:space-between;">
+                    <div class="osd-data-box">
+                        LAT: 39.9042<br>
+                        LNG: 116.4074
+                    </div>
+                    <div class="osd-data-box"
+                        style="text-align:right; border-left:none; border-right:3px solid var(--primary);">
+                        REC 04:25<br>
+                        ISO 200
+                    </div>
+                </div>
+
+                <div class="osd-crosshair"></div>
+
+                <div style="display:flex; justify-content:center; gap:50px;">
+                    <div class="osd-data-box" style="border:1px solid var(--primary); border-radius:10px;">H: 45.2m
+                    </div>
+                    <div class="osd-data-box" style="border:1px solid var(--primary); border-radius:10px;">V: 8.5m/s
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 右侧面板 -->
+        <aside class="right-panel-control">
+            <div class="card-glass" style="padding:20px;">
+                <h3 style="margin-bottom:15px; color:var(--accent);">相机控制</h3>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <button class="control-btn" onclick="capturePhoto()">📸 拍照</button>
+                    <button class="control-btn" style="color:#ff3e3e;">🔴 录制</button>
+                    <button class="control-btn">🔍 放大</button>
+                    <button class="control-btn">🔍 缩小</button>
+                </div>
+            </div>
+            <div class="card-glass" style="padding:20px; flex:1;">
+                <h3 style="margin-bottom:15px; color:var(--accent);">右摇杆 (俯仰/横滚)</h3>
+                <div class="joystick-container">
+                    <div class="joystick-knob"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 底部栏 -->
+        <footer class="bottom-action-bar">
+            <button class="control-btn" style="background:var(--primary); color:#000; width:150px;">🛫 自动起飞</button>
+            <button class="control-btn" style="width:150px;">🛬 自动降落</button>
+            <button class="control-btn" style="width:150px;">🏠 一键返航</button>
+            <button class="control-btn danger" style="width:150px;">🛑 紧急停机</button>
+        </footer>
+    </div>
+
+    <script>
+        // ==================== WebSocket 视频流接收 ====================
+        let socket = null;
+        let videoFeed = null;
+        let lastFrameTime = Date.now();
+        let frameTimeout = null;
+
+        // 初始化WebSocket连接
+        function initVideoStream() {
+            videoFeed = document.getElementById('videoFeed');
+            const placeholderImg = document.getElementById('placeholderImg');
+            const statusText = document.getElementById('statusText');
+
+            // 获取当前页面的主机地址
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.host;
+            const socketUrl = `${protocol}//${host}`;
+
+            console.log('[WebSocket] 正在连接到:', socketUrl);
+
+            socket = io(socketUrl, {
+                transports: ['polling'],  // 强制使用polling，避免websocket错误
+                reconnection: true,
+                upgrade: false  // 禁用升级到websocket
+            });
+
+            socket.on('connect', () => {
+                console.log('[WebSocket] ✅ 电脑端已连接，Session ID:', socket.id);
+                socket.emit('pc_connect');
+                statusText.textContent = '✅ 已连接服务器，等待视频流...';
+                statusText.style.color = '#00ff9d';
+                statusText.style.borderColor = '#00ff9d';
+            });
+
+            socket.on('disconnect', () => {
+                console.log('[WebSocket] 电脑端已断开');
+                statusText.textContent = '❌ 连接已断开';
+                statusText.style.color = '#ff3e3e';
+                statusText.style.borderColor = '#ff3e3e';
+                placeholderImg.style.display = 'block';
+                videoFeed.style.display = 'none';
+            });
+
+            socket.on('pc_connected', (data) => {
+                console.log('[WebSocket] ✅ 服务器确认连接，已注册为客户端:', data);
+            });
+
+            // 接收苹果检测结果
+            socket.on('apple_detection', (data) => {
+                const appleHint = document.getElementById('appleDetectionHint');
+                if (appleHint) {
+                    if (data.detected) {
+                        appleHint.style.display = 'block';
+                        console.log('[苹果检测] ✅ 检测到苹果，置信度:', (data.confidence * 100).toFixed(1) + '%');
+                    } else {
+                        appleHint.style.display = 'none';
+                        console.log('[苹果检测] 未检测到苹果');
+                    }
+                }
+            });
+
+            // 接收视频流
+            socket.on('video_stream', (data) => {
+                try {
+                    if (!data || !data.frame) {
+                        console.warn('[WebSocket] 收到空的视频帧数据');
+                        return;
+                    }
+
+                    // 调试日志：确认收到视频流
+                    if (!window.videoStreamReceived) {
+                        console.log('[WebSocket] ✅ 首次收到视频流数据，帧大小:', data.frame.length, '字符');
+                        window.videoStreamReceived = true;
+                    }
+
+                    lastFrameTime = Date.now();
+
+                    // 清除超时检测
+                    if (frameTimeout) {
+                        clearTimeout(frameTimeout);
+                    }
+
+                    // 验证帧数据
+                    if (!data.frame || data.frame.length < 100) {
+                        console.warn('[WebSocket] 收到损坏的帧数据，跳过');
+                        return;
+                    }
+
+                    // 将base64数据转换为图片并显示
+                    const imageUrl = 'data:image/jpeg;base64,' + data.frame;
+
+                    // 使用onload确保图片加载成功后再显示
+                    const img = new Image();
+                    let loadTimeout = setTimeout(() => {
+                        console.warn('[WebSocket] 图片加载超时，可能数据损坏');
+                        img.onload = null;
+                        img.onerror = null;
+                    }, 2000); // 2秒超时
+
+                    img.onload = function () {
+                        clearTimeout(loadTimeout);
+                        try {
+                            videoFeed.src = imageUrl;
+                            videoFeed.style.display = 'block';
+                            placeholderImg.style.display = 'none';
+                            statusText.textContent = '📹 视频流传输中';
+                            statusText.style.color = '#00ff9d';
+                            statusText.style.borderColor = '#00ff9d';
+                        } catch (e) {
+                            console.error('[WebSocket] 更新视频显示失败:', e);
+                        }
+                    };
+                    img.onerror = function () {
+                        clearTimeout(loadTimeout);
+                        console.error('[WebSocket] 图片加载失败，可能是损坏的帧数据');
+                        // 不更新显示，保持上一帧
+                    };
+                    img.src = imageUrl;
+
+                    // 设置超时检测（5秒未收到帧则显示警告）
+                    frameTimeout = setTimeout(() => {
+                        statusText.textContent = '⚠️ 视频流中断';
+                        statusText.style.color = '#ffc107';
+                        statusText.style.borderColor = '#ffc107';
+                    }, 5000);
+
+                } catch (error) {
+                    console.error('[WebSocket] 处理视频帧失败:', error);
+                }
+            });
+
+            socket.on('connect_error', (error) => {
+                console.error('[WebSocket] 连接错误:', error);
+                statusText.textContent = '❌ 连接失败';
+                statusText.style.color = '#ff3e3e';
+                statusText.style.borderColor = '#ff3e3e';
+            });
+
+            // 拍照功能
+            window.capturePhoto = function () {
+                const videoFeed = document.getElementById('videoFeed');
+                if (!videoFeed || !videoFeed.src || videoFeed.style.display === 'none') {
+                    alert('⚠️ 请先连接视频流');
+                    return;
+                }
+
+                // 获取当前视频帧的base64数据
+                const imageUrl = videoFeed.src;
+                if (!imageUrl || !imageUrl.startsWith('data:image')) {
+                    alert('⚠️ 无法获取当前画面');
+                    return;
+                }
+
+                // 提取base64数据（去掉data:image/jpeg;base64,前缀）
+                const base64Data = imageUrl.split(',')[1];
+                if (!base64Data) {
+                    alert('⚠️ 图片数据格式错误');
+                    return;
+                }
+
+                // 发送到后端保存
+                fetch('/api/capture_photo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        image_data: base64Data
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // 显示成功提示
+                            const statusText = document.getElementById('statusText');
+                            const originalText = statusText.textContent;
+                            statusText.textContent = '✅ 拍照成功，正在跳转到识别页面...';
+                            statusText.style.color = '#00ff9d';
+                            statusText.style.borderColor = '#00ff9d';
+
+                            // 将图片数据保存到sessionStorage，供主页使用
+                            sessionStorage.setItem('capturedImage', JSON.stringify({
+                                image_data: data.image_data,
+                                image_url: data.image_url,
+                                filename: data.upload_filename,
+                                timestamp: Date.now()
+                            }));
+
+                            console.log('[拍照] 成功保存:', data.filename);
+                            console.log('[拍照] 图片数据已保存到sessionStorage，准备跳转');
+
+                            // 延迟1秒后跳转到主页
+                            setTimeout(() => {
+                                window.location.href = '/';
+                            }, 1000);
+                        } else {
+                            alert('❌ 拍照失败: ' + (data.error || '未知错误'));
+                            console.error('[拍照] 失败:', data.error);
+                        }
+                    })
+                    .catch(error => {
+                        alert('❌ 拍照失败: ' + error.message);
+                        console.error('[拍照] 请求失败:', error);
+                    });
+            };
+        }
+
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            initVideoStream();
+        });
+
+        // 页面关闭时断开连接
+        window.addEventListener('beforeunload', () => {
+            if (socket) {
+                socket.disconnect();
+            }
+        });
+
+        // ==================== 虚拟摄像头功能 ====================
+
+        // 显示虚拟摄像头对话框
+        function showVirtualCameraDialog() {
+            document.getElementById('virtualCameraDialog').style.display = 'block';
+        }
+
+        // 关闭虚拟摄像头对话框
+        function closeVirtualCameraDialog() {
+            document.getElementById('virtualCameraDialog').style.display = 'none';
+        }
+
+        // 连接虚拟摄像头
+        async function connectVirtualCamera() {
+            const deviceIdInput = document.getElementById('virtualCameraDeviceId');
+            const deviceId = deviceIdInput.value.trim() === '' ? null : parseInt(deviceIdInput.value);
+            const statusDiv = document.getElementById('virtualCameraStatus');
+            const statusText = document.getElementById('statusText');
+
+            statusDiv.textContent = '🔄 正在连接...';
+            statusDiv.style.color = '#ffc107';
+
+            try {
+                const response = await fetch('/api/virtual_camera', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        device_id: deviceId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    statusDiv.textContent = '✅ ' + data.message;
+                    statusDiv.style.color = '#00ff9d';
+                    setTimeout(() => {
+                        closeVirtualCameraDialog();
+                        statusText.textContent = '📹 虚拟摄像头已连接，等待视频流...';
+                        statusText.style.color = '#00ff9d';
+                        // 隐藏占位图片，等待视频流
+                        const placeholderImg = document.getElementById('placeholderImg');
+                        if (placeholderImg) {
+                            placeholderImg.style.display = 'none';
+                        }
+                    }, 1500);
+                } else {
+                    statusDiv.textContent = '❌ ' + (data.error || '连接失败');
+                    statusDiv.style.color = '#ff3e3e';
+                }
+            } catch (error) {
+                console.error('连接虚拟摄像头失败:', error);
+                statusDiv.textContent = '❌ 连接失败: ' + error.message;
+                statusDiv.style.color = '#ff3e3e';
+            }
+        }
+
+        // 停止虚拟摄像头
+        async function stopVirtualCamera() {
+            const statusDiv = document.getElementById('virtualCameraStatus');
+            const statusText = document.getElementById('statusText');
+
+            try {
+                const response = await fetch('/api/virtual_camera/stop', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+                statusDiv.textContent = data.message;
+                statusDiv.style.color = '#00ff9d';
+                statusText.textContent = '⏳ 等待视频流...';
+                statusText.style.color = '#ffc107';
+            } catch (error) {
+                statusDiv.textContent = '❌ 停止失败: ' + error.message;
+                statusDiv.style.color = '#ff3e3e';
+            }
+        }
+
+        // 列出可用的摄像头设备
+        async function listVirtualCameras() {
+            const statusDiv = document.getElementById('virtualCameraStatus');
+            const deviceIdInput = document.getElementById('virtualCameraDeviceId');
+
+            statusDiv.textContent = '🔄 正在检测设备...';
+            statusDiv.style.color = '#ffc107';
+
+            try {
+                const response = await fetch('/api/virtual_camera/list');
+                const data = await response.json();
+
+                if (response.ok && data.devices && data.devices.length > 0) {
+                    let deviceList = '✅ 找到 ' + data.devices.length + ' 个设备:<br><br>';
+                    data.devices.forEach((device, index) => {
+                        const isVirtual = device.is_virtual ? '📹 虚拟摄像头' : '📷 物理摄像头';
+                        const highlight = device.is_virtual ? ' style="color:#00ff9d; font-weight:bold;"' : '';
+                        deviceList += `<div${highlight}>${isVirtual} - 设备 ${device.device_id}: ${device.width}x${device.height}`;
+                        if (device.name) {
+                            deviceList += ` (${device.name})`;
+                        }
+                        deviceList += '</div>';
+                    });
+                    statusDiv.innerHTML = deviceList;
+                    statusDiv.style.color = '#00ff9d';
+
+                    // 自动填入第一个虚拟摄像头设备ID，如果没有则使用第一个设备
+                    const virtualDevice = data.devices.find(d => d.is_virtual);
+                    if (virtualDevice) {
+                        deviceIdInput.value = virtualDevice.device_id;
+                        statusDiv.innerHTML += '<br><div style="color:#00ff9d; font-weight:bold;">✅ 已自动选择虚拟摄像头（设备 ' + virtualDevice.device_id + '）</div>';
+                    } else if (data.devices.length > 0) {
+                        deviceIdInput.value = data.devices[0].device_id;
+                        statusDiv.innerHTML += '<br><div style="color:#ffc107;">⚠️ 未找到虚拟摄像头，已选择物理摄像头（设备 ' + data.devices[0].device_id + '）</div>';
+                    }
+                } else {
+                    statusDiv.textContent = '❌ 未找到可用的摄像头设备\n\n请确保：\n1. 虚拟摄像头软件已启动并连接\n2. 虚拟摄像头已激活';
+                    statusDiv.style.color = '#ff3e3e';
+                }
+            } catch (error) {
+                console.error('检测设备失败:', error);
+                statusDiv.textContent = '❌ 检测失败: ' + error.message;
+                statusDiv.style.color = '#ff3e3e';
+            }
+        }
+
+        // ==================== 原有的模拟数据代码 ====================
+        // 模拟一些动态数据变化
+        setInterval(() => {
+            const values = document.querySelectorAll('.status-value');
+            // 简单模拟电池和高度微调
+            if (Math.random() > 0.8) {
+                // ... 可以增加 JS 让数据跳动 ...
+            }
+        }, 1000);
+    </script>
+</body>
+
+</html>

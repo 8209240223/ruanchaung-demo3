@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据可视化大屏 - 智慧农业</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/agri-assistant.css') }}">
+</head>
+
+<body>
+    {% include '_auth_user_strip.html' %}
+    <div class="dashboard-header">
+        <div class="header-line"></div>
+        <div class="header-content">
+            <div class="header-left">SYSTEM STATUS: <span style="color:var(--primary)">ONLINE</span></div>
+            <div class="header-center">智慧农业 - 无人机智能监控指挥中心</div>
+            <div class="header-right" id="currentTime"></div>
+        </div>
+    </div>
+    <div class="dashboard-container">
+        <!-- 左侧指标区（实时数据） -->
+        <div class="left-panel">
+            <div class="metric-box">
+                <div class="metric-title">识别总量</div>
+                <div class="metric-value-large" id="metricRecognition">0</div>
+                <div class="metric-trend up" id="metricRecogTrend">累计</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-title">预警分布</div>
+                <div class="warning-list">
+                    <div class="warning-item">
+                        <span class="warning-level high">高</span>
+                        <span class="warning-count" id="warningHigh">0</span>
+                    </div>
+                    <div class="warning-item">
+                        <span class="warning-level medium">中</span>
+                        <span class="warning-count" id="warningMedium">0</span>
+                    </div>
+                    <div class="warning-item">
+                        <span class="warning-level low">低</span>
+                        <span class="warning-count" id="warningLow">0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-title">无人机设备</div>
+                <div class="metric-value-large" id="metricDevices">0</div>
+                <div class="device-status">
+                    <span class="online">在线: <span id="deviceOnline">0</span></span>
+                    <span class="offline">离线: <span id="deviceOffline">0</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中央图表区 -->
+        <div class="center-panel">
+            <div class="chart-title">实时作物分布分析</div>
+            <div class="pie-chart-container">
+                <canvas id="cropPieChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 右侧信息区 -->
+        <div class="right-panel">
+            <div class="info-box">
+                <div class="info-title">实时作业动态</div>
+                <div class="log-container" id="logContainer">
+                    <!-- 动态插入 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部统计栏（实时数据） -->
+        <div class="bottom-bar">
+            <div class="stat-item">
+                <span class="stat-label">识别总量</span>
+                <span class="stat-value" id="statRecognition">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">遥测数据条数</span>
+                <span class="stat-value" id="statTelemetry">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">在线无人机</span>
+                <span class="stat-value" id="statOnline">0/0</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="agri-assistant-widget" class="agri-asst">
+        <button type="button" id="agri-asst-fab" class="agri-asst-fab" aria-label="打开农业智能助手" aria-expanded="false"
+            aria-controls="agri-asst-panel">🌾</button>
+        <div id="agri-asst-panel" class="agri-asst-panel" role="dialog" aria-labelledby="agri-asst-title">
+            <div class="agri-asst-head">
+                <div class="agri-asst-head-title">
+                    <strong id="agri-asst-title">农业智能助手</strong>
+                    <span>种植 · 植保 · 灌溉 · 农事咨询（极速简答）</span>
+                </div>
+                <button type="button" id="agri-asst-close" class="agri-asst-close" aria-label="关闭对话">×</button>
+            </div>
+            <div id="agri-asst-messages" class="agri-asst-messages">
+                <div class="agri-asst-msg agri-asst-msg--hint">您好，可直接提问；可上传作物照片分析；🎤 需 Chrome/Edge 并允许麦克风。</div>
+            </div>
+            <div id="agri-asst-preview" class="agri-asst-preview">
+                <img id="agri-asst-preview-img" alt="预览">
+                <span>已选图片，将随下一条消息发送</span>
+                <button type="button" class="agri-asst-preview-remove" id="agri-asst-preview-remove">移除</button>
+            </div>
+            <div class="agri-asst-foot">
+                <div class="agri-asst-toolbar">
+                    <button type="button" id="agri-asst-img" class="agri-asst-tool" title="上传图片">🖼</button>
+                    <button type="button" id="agri-asst-mic" class="agri-asst-tool" title="语音输入（中文）">🎤</button>
+                </div>
+                <div class="agri-asst-foot-main">
+                    <textarea id="agri-asst-input" class="agri-asst-input" rows="1" placeholder="文字或语音输入，Enter 发送"
+                        maxlength="2000"></textarea>
+                </div>
+                <button type="button" id="agri-asst-send" class="agri-asst-send">发送</button>
+            </div>
+            <input type="file" id="agri-asst-file" accept="image/*" hidden>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/agri-assistant.js') }}"></script>
+</body>
+
+</html>

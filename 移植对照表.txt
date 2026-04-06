@@ -1,0 +1,22 @@
+网站路径/模块 -> 鸿蒙页面 -> 数据来源
+/ 首页入口 -> pages/Index -> 本地导航
+/mobile 能力中心 -> Index 功能栅格 -> router 各页
+/识别 -> RecognitionPage -> RDB + InferenceService（模拟/可换端侧模型）
+/成熟度 -> MaturityPage -> 同上 scene=maturity
+/病虫害 -> DiseasePage -> 同上 scene=disease
+/用药 -> PrescriptionPage -> RDB prescriptions
+/历史 -> HistoryPage -> RDB recognition_history
+/任务规划 -> MissionPlanningPage -> RDB tasks
+任务列表/详情 -> TaskListPage, TaskDetailPage -> RDB tasks/drones
+无人机控制 -> UavControlPage -> RDB drones 更新
+机队 -> DroneFleetPage -> RDB drones
+果园地图 -> OrchardMapPage -> rawfile/orchard_grid.json + BFS + RDB orchard_snapshots
+/视频分析 -> VideoAnalyzePage -> RDB video_jobs（模拟进度）
+/气象 -> WeatherPage -> 可选和风 API（FarmConfig）或演示文案
+灌溉 -> IrrigationPage -> 本地规则
+风险 -> RiskPage -> RDB 统计 + 静态提示
+/dashboard -> DashboardPage / Tab 数据 -> RDB 聚合
+/admin -> AdminPage -> 清空库、跳转关于与 CloudDemo
+关于 -> AboutPage -> 静态说明
+
+未再使用 WebShell 加载 Flask；CloudDemo 保留 AGC 示例。

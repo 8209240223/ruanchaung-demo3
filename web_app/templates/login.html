@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 智慧农业</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+
+<body>
+    <div class="bg-decoration">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+    <div class="auth-page">
+        <div class="auth-card">
+            <h1>登录</h1>
+            <p class="auth-sub">智慧农业统一管理系统</p>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+            <div class="auth-flash auth-flash--{{ cat }}">{{ msg }}</div>
+            {% endfor %}
+            {% endwith %}
+            <form method="post" action="{{ url_for('login') }}" autocomplete="on">
+                <input type="hidden" name="next" value="{{ next or '' }}">
+                <div class="auth-field">
+                    <label for="username">用户名</label>
+                    <input id="username" name="username" type="text" required maxlength="32" autofocus
+                        placeholder="用户名">
+                </div>
+                <div class="auth-field">
+                    <label for="password">密码</label>
+                    <input id="password" name="password" type="password" required placeholder="密码"
+                        autocomplete="current-password">
+                </div>
+                <button type="submit" class="auth-submit">登录</button>
+            </form>
+            <p class="auth-footer">没有账号？<a href="{{ url_for('register') }}">注册</a></p>
+        </div>
+    </div>
+</body>
+
+</html>

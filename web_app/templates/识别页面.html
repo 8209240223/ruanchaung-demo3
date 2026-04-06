@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作物识别 - 智慧农业</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/识别页面.css') }}">
+</head>
+
+<body>
+    {% include '_auth_user_strip.html' %}
+    <div class="bg-decoration">
+        <div class="orb orb-1" style="width:400px; height:400px; top:-5%; left:10%;"></div>
+        <div class="orb orb-2" style="width:350px; height:350px; bottom:15%; right:5%;"></div>
+    </div>
+
+    <div class="page-container">
+        <a href="/" class="btn-back">返回</a>
+
+        <header>
+            <h1>🌾 智能作物识别</h1>
+            <p style="color:var(--text-dim)">基于多模态深度学习算法，实时识别农作物种类与生长环境</p>
+        </header>
+
+        <main>
+            <!-- 模型选择卡片 -->
+            <div class="card-glass" style="padding: 20px;">
+                <div id="modelInfo" style="margin: 0; padding: 10px;">
+                    <!-- 由JS填充 -->
+                </div>
+            </div>
+
+            <!-- 上传区域 -->
+            <div class="card-glass">
+                <div class="upload-box" id="uploadBox">
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                    <i>📸</i>
+                    <p style="font-size: 1.5rem; font-weight: 900; color:#fff; letter-spacing: 2px;">点击或拖拽作物照片至此</p>
+                    <p style="color:var(--text-dim); margin-top: 15px; font-size: 1rem;">智能视觉引擎将自动分析作物健康状态</p>
+                </div>
+                <button id="uploadBtn" class="btn-action" style="display: none;">
+                    <span>🚀 执行 AI 深度识别</span>
+                </button>
+            </div>
+
+            <!-- 预览区域 -->
+            <div id="previewSection" class="card-glass" style="display: none; text-align: center;">
+                <h2>待分析影像预览</h2>
+                <div class="image-container" style="max-width: 100%; overflow: hidden; border-radius: 20px;">
+                    <img id="previewImage" src="" alt="预览图片"
+                        style="max-width: 100%; border: 4px solid var(--glass-border);">
+                </div>
+            </div>
+
+            <!-- 结果区域 -->
+            <div id="resultSection" class="card-glass" style="display: none;">
+                <h2 style="color: var(--primary);">分析结果报告</h2>
+
+                <div class="result-card"
+                    style="background: rgba(255,255,255,0.02); padding: 25px; border-radius: 20px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <span style="font-size: 1.1rem; color: var(--accent);">识别结论：</span>
+                        <span id="resultClass"
+                            style="font-size: 2rem; font-weight: 900; color: #fff; text-shadow: 0 0 15px var(--primary);">--</span>
+                    </div>
+
+                    <div class="confidence-container" style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: var(--text-dim);">置信度</span>
+                            <span id="confidenceText" style="color: var(--primary); font-weight: 800;">0%</span>
+                        </div>
+                        <div class="confidence-bar">
+                            <div id="confidenceFill" class="confidence-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <p id="resultDescription" style="line-height: 1.8; color: #e2e8f0; font-size: 1.05rem;"></p>
+                </div>
+
+                <div style="margin-top: 40px;">
+                    <h3 style="color: var(--accent); margin-bottom: 20px;">多类目概率分析</h3>
+                    <div id="probabilityList"></div>
+                </div>
+
+                <div style="margin-top: 40px; text-align: center;">
+                    <h3 style="color: var(--accent); margin-bottom: 20px;">标注识别详情</h3>
+                    <div class="image-container"
+                        style="border-radius: 25px; overflow: hidden; border: 2px solid var(--primary);">
+                        <img id="annotatedImage" src="" alt="标注结果" style="max-width: 100%;">
+                    </div>
+                </div>
+
+                <div id="actionPlanSection" class="card-glass"
+                    style="display:none; margin-top: 30px; border-left: 4px solid var(--primary);">
+                    <h3 style="color: var(--primary); margin-bottom: 15px;">行动建议卡片</h3>
+                    <div id="actionPlanContent" style="line-height: 1.8; color: #e2e8f0;"></div>
+                </div>
+
+                <button id="resetBtn" class="btn-back"
+                    style="margin-top: 40px; width: 100%; justify-content: center; background: rgba(255,255,255,0.1);">重新采集分析</button>
+            </div>
+
+            <!-- 加载中 -->
+            <div id="loading" style="display: none; text-align: center; padding: 50px;">
+                <div class="spinner"
+                    style="border: 4px solid rgba(0,255,157,0.1); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px;">
+                </div>
+                <p style="color: var(--primary); font-weight: 800; letter-spacing: 2px;">AI正在深度分析中...</p>
+            </div>
+
+            <div id="errorMessage" class="card-glass" style="display: none; border-color: #ff3e3e; color: #ff3e3e;">
+            </div>
+        </main>
+    </div>
+
+    <style>
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
+    <script src="{{ url_for('static', filename='js/识别页面.js') }}"></script>
+</body>
+
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>历史记录 - 智慧农业</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/识别页面.css') }}">
+</head>
+
+<body>
+    {% include '_auth_user_strip.html' %}
+    <div class="bg-decoration">
+        <div class="orb orb-1" style="width:500px; height:500px; top:-10%; left:-10%; opacity: 0.1;"></div>
+    </div>
+
+    <div class="page-container">
+        <a href="/" class="btn-back">返回</a>
+
+        <header>
+            <h1>📋 作业历史追溯</h1>
+            <p style="color:var(--text-dim)">查看往期巡检、诊断与作业记录，实现农田数据化闭环管理</p>
+        </header>
+
+        <main>
+            <!-- 历史记录列表 -->
+            <div class="card-glass">
+                <div
+                    style="display: flex; justify-content: space-between; margin-bottom: 20px; gap: 12px; flex-wrap: wrap;">
+                    <h2>最近记录</h2>
+                    <div style="display:flex; gap:10px;">
+                        <select id="logTypeFilter"
+                            style="padding:8px 10px; border-radius:8px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.05); color:#fff;">
+                            <option value="">全部日志</option>
+                            <option value="recognition">识别决策</option>
+                            <option value="risk_alert">风险预警</option>
+                            <option value="irrigation_plan">灌溉建议</option>
+                            <option value="task">任务日志</option>
+                            <option value="execution">执行日志</option>
+                        </select>
+                        <button id="refreshHistoryBtn" class="btn-back" style="padding:8px 12px;">刷新</button>
+                    </div>
+                </div>
+
+                <div class="history-list">
+                    <!-- 历史记录将通过JavaScript动态加载 -->
+                </div>
+            </div>
+
+            <div style="text-align: center; color: var(--text-dim); padding: 40px;">
+                <p>--- 已加载全部历史记录 ---</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/历史记录.js') }}"></script>
+</body>
+
+</html>

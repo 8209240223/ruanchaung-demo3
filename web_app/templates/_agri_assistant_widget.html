@@ -1,0 +1,35 @@
+{# 悬浮农业 AI 助手；mobile 页设置 {% set agri_asst_in_phone = true %} 后 include #}
+<div id="agri-assistant-widget"
+    class="agri-asst{% if agri_asst_in_phone|default(false) %} agri-asst--in-phone{% endif %}">
+    <button type="button" id="agri-asst-fab" class="agri-asst-fab" aria-label="打开农业智能助手" aria-expanded="false"
+        aria-controls="agri-asst-panel">🌾</button>
+    <div id="agri-asst-panel" class="agri-asst-panel" role="dialog" aria-labelledby="agri-asst-title">
+        <div class="agri-asst-head">
+            <div class="agri-asst-head-title">
+                <strong id="agri-asst-title">农业智能助手</strong>
+                <span>种植 · 植保 · 灌溉 · 农事咨询</span>
+            </div>
+            <button type="button" id="agri-asst-close" class="agri-asst-close" aria-label="关闭对话">×</button>
+        </div>
+        <div id="agri-asst-messages" class="agri-asst-messages">
+            <div class="agri-asst-msg agri-asst-msg--hint">您好，可直接提问；可上传作物照片分析；🎤 需 Chrome/Edge 并允许麦克风。</div>
+        </div>
+        <div id="agri-asst-preview" class="agri-asst-preview">
+            <img id="agri-asst-preview-img" alt="预览">
+            <span>已选图片，将随下一条消息发送</span>
+            <button type="button" class="agri-asst-preview-remove" id="agri-asst-preview-remove">移除</button>
+        </div>
+        <div class="agri-asst-foot">
+            <div class="agri-asst-toolbar">
+                <button type="button" id="agri-asst-img" class="agri-asst-tool" title="上传图片">🖼</button>
+                <button type="button" id="agri-asst-mic" class="agri-asst- tool" title="语音输入（中文）">🎤</button>
+            </div>
+            <div class="agri-asst-foot-main">
+                <textarea id="agri-asst-input" class="agri-asst-input" rows="1" placeholder="文字或语音输入，Enter 发送"
+                    maxlength="2000"></textarea>
+            </div>
+            <button type="button" id="agri-asst-send" class="agri-asst-send">发送</button>
+        </div>
+        <input type="file" id="agri-asst-file" accept="image/*" hidden>
+    </div>
+</div>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用药建议 - 智慧农业</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/识别页面.css') }}">
+</head>
+
+<body>
+    {% include '_auth_user_strip.html' %}
+    <div class="bg-decoration">
+        <div class="orb orb-1" style="width:350px; height:350px; top:5%; right:5%; background: var(--accent);"></div>
+        <div class="orb orb-2" style="width:400px; height:400px; bottom:5%; left:5%; background: var(--primary);"></div>
+    </div>
+
+    <div class="page-container">
+        <a href="/mobile" class="btn-back">返回</a>
+
+        <header>
+            <h1>💊 智能用药建议</h1>
+            <p style="color:var(--text-dim)">基于AI诊断结果，提供精准、绿色、高效的施药方案</p>
+        </header>
+
+        <main>
+            <!-- 方案选择 -->
+            <div class="card-glass">
+                <h2>方案生成器</h2>
+                <div style="margin-top: 20px;">
+                    <div class="detail-item">
+                        <span class="detail-label">关联诊断记录</span>
+                        <span class="detail-value">无 (请先完成诊断)</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">建议药剂</span>
+                        <span class="detail-value">--</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">稀释比例</span>
+                        <span class="detail-value">--</span>
+                    </div>
+                </div>
+                <button class="btn-action">
+                    <span>⚡ 生成精准用药方案</span>
+                </button>
+            </div>
+
+            <!-- 安全须知 -->
+            <div class="card-glass" style="border-color: #ff9800;">
+                <h2 style="color: #ff9800;">⚠️ 施药安全说明</h2>
+                <ul style="margin-top: 15px; line-height: 2; padding-left: 20px; color: #e2e8f0;">
+                    <li>严格按照稀释比例进行配药</li>
+                    <li>避免在高温烈日下进行作业</li>
+                    <li>作业后请注意个人卫生与清洗</li>
+                    <li>记录施药时间以备后期追溯</li>
+                </ul>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频分析 - 智慧农业</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/识别页面.css') }}">
+    <style>
+        .video-upload-box {
+            padding: 40px;
+            text-align: center;
+            border: 2px dashed var(--glass-border);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .video-upload-box:hover {
+            border-color: var(--primary);
+            background: rgba(0, 255, 157, 0.05);
+        }
+
+        .video-upload-box.dragover {
+            border-color: var(--primary);
+            background: rgba(0, 255, 157, 0.1);
+        }
+
+        /* 播放区 */
+        .result-video {
+            margin-top: 20px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #0a0a0f;
+            display: none;
+        }
+
+        .result-video video {
+            width: 100%;
+            max-height: 500px;
+            display: block;
+            object-fit: contain;
+        }
+
+        /* 识别汇总 */
+        .stats-summary {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .stats-card {
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stats-card h4 {
+            margin: 0 0 12px 0;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        .stats-card .value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .stats-card ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .stats-card li {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 0.9rem;
+        }
+
+        .stats-card li:last-child {
+            border-bottom: none;
+        }
+
+        .progress-wrap {
+            margin: 20px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #00ff9d);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .flex-btns {
+            display: flex;
+        }
+    </style>
+</head>
+
+<body>
+    {% include '_auth_user_strip.html' %}
+    <div class="bg-decoration">
+        <div class="orb orb-1" style="width:350px; height:350px; top:5%; right:5%; background: var(--primary);"></div>
+        <div class="orb orb-2" style="width:450px; height:450px; bottom:-10%; left:5%; background: #ff3e3e;"></div>
+    </div>
+
+    <div class="page-container">
+        <a href="/mobile" class="btn-back">返回</a>
+
+        <header>
+            <h1>🎬 果园视频智能分析</h1>
+            <p style="color:var(--text-dim)">上传无人机果园视频，自动完成苹果检测、成熟度识别与病虫害诊断</p>
+        </header>
+
+        <main>
+            <div class="card-glass">
+                <h2 style="margin-bottom: 20px;">上传视频</h2>
+                <div class="video-upload-box" id="uploadBox">
+                    <input type="file" id="fileInput" accept="video/*,.mp4,.avi,.mov,.mkv,.webm" style="display: none;">
+                    <i style="font-size: 4rem;">🎬</i>
+                    <p style="font-size: 1.5rem; font-weight: 900; color:#fff; letter-spacing: 2px; margin-top: 15px;">
+                        点击或拖拽视频至此</p>
+                    <p style="color:var(--text-dim); margin-top: 10px;">支持 mp4 / avi / mov / mkv / webm，最大 200MB</p>
+                </div>
+                <div id="actionBtns" style="display: none; margin-top: 20px; gap: 12px; flex-wrap: wrap;"
+                    class="flex-btns">
+                    <button type="button" id="analyzeBtn" class="btn-action"
+                        style="background: linear-gradient(135deg, #00c853, #00e676); width: 100%;">
+                        <span>🔬 智能识别</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="progressSection" class="card-glass progress-wrap">
+                <h2 style="margin-bottom: 15px;">处理进度</h2>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p id="progressText" style="margin-top: 10px; color: var(--text-dim);">0 / 0 帧</p>
+            </div>
+
+            <div id="resultSection" class="card-glass result-video" style="display: none;">
+                <h2 style="margin-bottom: 15px; color: var(--primary);">视频播放</h2>
+                <video id="resultVideo" controls playsinline preload="auto"></video>
+                <div id="statsSummary" class="stats-summary" style="display: none;"></div>
+                <div style="margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
+                    <a id="downloadLink" href="#" class="btn-action" download style="text-decoration: none;">
+                        <span>📥 下载视频</span>
+                    </a>
+                    <button id="resetBtn" class="btn-back" style="background: rgba(255,255,255,0.1);">重新上传</button>
+                </div>
+            </div>
+
+            <div id="errorSection" class="card-glass" style="display: none; border-color: #ff3e3e; color: #ff3e3e;">
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const uploadBox = document.getElementById('uploadBox');
+        const fileInput = document.getElementById('fileInput');
+        const actionBtns = document.getElementById('actionBtns');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const resultSection = document.getElementById('resultSection');
+        const resultVideo = document.getElementById('resultVideo');
+        const downloadLink = document.getElementById('downloadLink');
+        const resetBtn = document.getElementById('resetBtn');
+        const errorSection = document.getElementById('errorSection');
+
+        let selectedFile = null;
+        const FAKE_BUFFER_MS = 2800;
+        let pendingFakeBufferPlay = false;
+
+        function onDeferFirstPlay() {
+            if (!pendingFakeBufferPlay) {
+                return;
+            }
+            pendingFakeBufferPlay = false;
+            resultVideo.removeEventListener('play', onDeferFirstPlay, true);
+            resultVideo.pause();
+            setTimeout(function () {
+                resultVideo.play().catch(function () { });
+            }, FAKE_BUFFER_MS);
+        }
+
+        function attachFakeBufferForNewClip() {
+            resultVideo.removeEventListener('play', onDeferFirstPlay, true);
+            pendingFakeBufferPlay = true;
+            resultVideo.addEventListener('play', onDeferFirstPlay, true);
+        }
+
+        uploadBox.addEventListener('click', () => fileInput.click());
+        uploadBox.addEventListener('dragover', (e) => { e.preventDefault(); uploadBox.classList.add('dragover'); });
+        uploadBox.addEventListener('dragleave', () => uploadBox.classList.remove('dragover'));
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadBox.classList.remove('dragover');
+            const f = e.dataTransfer?.files?.[0];
+            if (f && f.type.startsWith('video/')) {
+                selectedFile = f;
+                actionBtns.style.display = 'flex';
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const f = e.target.files?.[0];
+            if (f) {
+                selectedFile = f;
+                actionBtns.style.display = 'flex';
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        analyzeBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (!selectedFile) {
+                errorSection.textContent = '请先选择视频文件';
+                errorSection.style.display = 'block';
+                return;
+            }
+            errorSection.style.display = 'none';
+            analyzeBtn.disabled = true;
+            analyzeBtn.innerHTML = '<span>⏳ 上传中…</span>';
+            const fd = new FormData();
+            fd.append('video', selectedFile);
+            fd.append('play_only', '1');
+            try {
+                const r = await fetch('/api/video/orchard_analyze', { method: 'POST', body: fd });
+                const data = await r.json();
+                if (!data.success) {
+                    throw new Error(data.error || '上传失败');
+                }
+                actionBtns.style.display = 'none';
+                resultSection.style.display = 'block';
+                const videoUrl = (data.output_url || data.input_url) + '?t=' + Date.now();
+                const fullUrl = videoUrl.startsWith('http') ? videoUrl : (window.location.origin + videoUrl);
+                downloadLink.href = fullUrl;
+                downloadLink.download = selectedFile.name || 'video.mp4';
+                resultVideo.addEventListener('error', function onErr() {
+                    errorSection.textContent = '视频加载失败，请检查格式或重试';
+                    errorSection.style.display = 'block';
+                }, { once: true });
+                requestAnimationFrame(() => {
+                    resultVideo.src = fullUrl;
+                    resultVideo.load();
+                    attachFakeBufferForNewClip();
+                });
+            } catch (err) {
+                errorSection.textContent = err.message || '请求失败';
+                errorSection.style.display = 'block';
+                analyzeBtn.disabled = false;
+                analyzeBtn.innerHTML = '<span>🔬 智能识别</span>';
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            actionBtns.style.display = 'none';
+            document.getElementById('progressSection').style.display = 'none';
+            analyzeBtn.disabled = false;
+            analyzeBtn.innerHTML = '<span>🔬 智能识别</span>';
+            resultVideo.removeEventListener('play', onDeferFirstPlay, true);
+            pendingFakeBufferPlay = false;
+            resultSection.style.display = 'none';
+            resultVideo.src = '';
+            downloadLink.href = '#';
+            errorSection.style.display = 'none';
+            const se = document.getElementById('statsSummary');
+            if (se) { se.style.display = 'none'; se.innerHTML = ''; }
+            document.querySelector('#resultSection h2').textContent = '视频播放';
+        });
+    </script>
+</body>
+
+</html>

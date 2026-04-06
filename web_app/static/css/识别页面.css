@@ -1,0 +1,165 @@
+/* 功能子页面极致重构 - 赛博暗黑风 */
+:root {
+    --primary: #00ff9d;
+    --accent: #00d2ff;
+    --bg-dark: #050a15;
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+body {
+    background: var(--bg-dark);
+    color: #ffffff;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* 统一背景动效 */
+.bg-decoration {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: -1;
+    background: radial-gradient(circle at 50% 50%, #0a192f 0%, #050a15 100%);
+}
+
+.page-container {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 20px;
+    animation: fadeIn 0.8s ease-out;
+}
+
+/* 高级返回按钮 */
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 15px;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 30px;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+}
+
+.btn-back:hover {
+    background: rgba(0, 210, 255, 0.1);
+    border-color: var(--accent);
+    transform: translateX(-5px);
+    box-shadow: 0 0 15px rgba(0, 210, 255, 0.2);
+}
+
+.btn-back::before {
+    content: '←';
+    margin-right: 8px;
+    font-size: 1.2rem;
+}
+
+/* 标题设计 */
+h1, h2 {
+    background: linear-gradient(to right, #fff, var(--primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 25px;
+}
+
+/* 水晶玻璃卡片容器 */
+.card-glass {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 25px;
+    padding: 35px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+/* 霓虹功能按钮 (巨型科技版) */
+.btn-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    width: 100%;
+    max-width: 450px; /* 增加最大宽度 */
+    margin: 40px auto;
+    padding: 22px 40px; /* 增加内边距 */
+    background: linear-gradient(45deg, var(--primary), var(--accent));
+    color: #000;
+    border: none;
+    border-radius: 24px; /* 增加圆角 */
+    font-size: 1.4rem; /* 增大字体 */
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    box-shadow: 0 15px 40px rgba(0, 255, 157, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-action::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: 0.5s;
+}
+
+.btn-action:hover {
+    transform: translateY(-10px) scale(1.05);
+    box-shadow: 0 25px 60px rgba(0, 255, 157, 0.6);
+    filter: brightness(1.1);
+}
+
+.btn-action:hover::before {
+    left: 100%;
+}
+
+/* 上传框重构 - 增加深度感 */
+.upload-box {
+    border: 3px dashed rgba(0, 210, 255, 0.3);
+    background: rgba(0, 210, 255, 0.03);
+    border-radius: 40px;
+    padding: 80px 40px; /* 大幅增加垂直内边距 */
+    text-align: center;
+    transition: all 0.4s;
+    cursor: pointer;
+    position: relative;
+}
+
+.upload-box:hover {
+    background: rgba(0, 210, 255, 0.08);
+    border-color: var(--primary);
+    transform: scale(1.02);
+    box-shadow: inset 0 0 30px rgba(0, 255, 157, 0.1);
+}
+
+.upload-box i {
+    font-size: 5rem;
+    margin-bottom: 25px;
+    display: block;
+    filter: drop-shadow(0 0 15px var(--accent));
+}
+
+
+/* 列表与详情文字优化 */
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.detail-label { color: var(--accent); font-weight: 600; }
+.detail-value { color: #fff; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}

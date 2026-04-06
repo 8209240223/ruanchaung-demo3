@@ -1,0 +1,7 @@
+{% if current_user %}
+<div class="top-user-bar">
+    <span class="top-user-bar__name">{{ current_user.username }}</span>
+    <a class="top-user-bar__link" href="{{ url_for('index') }}">首页</a>
+    <a class="top-user-bar__link top-user-bar__link--out" href="{{ url_for('logout') }}">退出</a>
+</div>
+{% endif %}

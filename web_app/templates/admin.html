@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后台管理系统 - 智慧农业</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/识别页面.css') }}">
+</head>
+
+<body>
+    {% include '_auth_user_strip.html' %}
+    <div class="bg-decoration">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <div class="admin-layout">
+        <!-- 左侧导航栏 -->
+        <aside class="sidebar-glass">
+            <div class="sidebar-header">
+                <div class="logo-box">
+                    <span class="logo-icon">🌾</span>
+                    <div class="logo-text">
+                        <h2>智慧农业</h2>
+                        <p>MANAGEMENT</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-group-label">主要功能</div>
+                <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">控制面板</span>
+                </div>
+                <div class="nav-item" data-page="irrigation" onclick="switchPage('irrigation')">
+                    <span class="nav-icon">💧</span>
+                    <span class="nav-text">灌溉建议</span>
+                </div>
+                <div class="nav-item" data-page="risk" onclick="switchPage('risk')">
+                    <span class="nav-icon">🛡️</span>
+                    <span class="nav-text">风险预警</span>
+                </div>
+                <div class="nav-item" data-page="mission" onclick="switchPage('mission')">
+                    <span class="nav-icon">🛸</span>
+                    <span class="nav-text">无人机调度</span>
+                </div>
+                <div class="nav-item" data-page="task" onclick="switchPage('task')">
+                    <span class="nav-icon">🗂️</span>
+                    <span class="nav-text">任务列表</span>
+                </div>
+
+                <div class="nav-group-label">设备与设置</div>
+                <div class="nav-item" data-page="devices" onclick="switchPage('devices')">
+                    <span class="nav-icon">🛸</span>
+                    <span class="nav-text">设备管理</span>
+                </div>
+                <div class="nav-item" data-page="settings" onclick="switchPage('settings')">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">系统设置</span>
+                </div>
+
+                <div class="nav-group-label">数据管理</div>
+                <div class="nav-item" data-page="history" onclick="switchPage('history')">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-text">识别历史</span>
+                </div>
+
+                <div class="sidebar-footer">
+                    <div class="nav-item exit" onclick="window.location.href='/'">
+                        <span class="nav-icon">🏠</span>
+                        <span class="nav-text">返回主站</span>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-container">
+            <!-- 顶栏 -->
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1 id="adminPageTitle">系统概览</h1>
+                    <nav class="breadcrumb" id="adminBreadcrumb">Admin / 控制面板</nav>
+                </div>
+                <div class="header-right">
+                    <div class="status-pill online">
+                        <span class="dot"></span>
+                        服务器运行中
+                    </div>
+                    <div class="user-profile">
+                        <div class="avatar">R</div>
+                        <div class="user-meta">
+                            <span class="username">ROOT</span>
+                            <span class="role">超级管理员</span>
+                        </div>
+                    </div>
+                    <button class="btn-logout-minimal">退出</button>
+                </div>
+            </header>
+
+            <!-- 核心内容 -->
+            <div class="admin-content active" id="dashboardPage">
+
+                <!-- 左右排版的指标卡片组（实时数据） -->
+                <div class="metrics-grid">
+                    <div class="metric-glass-card primary">
+                        <div class="card-icon">💧</div>
+                        <div class="card-data">
+                            <span class="value" id="metricIrrigation">0</span>
+                            <span class="label">灌溉建议</span>
+                        </div>
+                        <div class="card-trend">累计</div>
+                    </div>
+
+                    <div class="metric-glass-card accent">
+                        <div class="card-icon">🛡️</div>
+                        <div class="card-data">
+                            <span class="value" id="metricRisk">0</span>
+                            <span class="label">风险预警</span>
+                        </div>
+                        <div class="card-trend">累计</div>
+                    </div>
+
+                    <div class="metric-glass-card warning">
+                        <div class="card-icon">🛸</div>
+                        <div class="card-data">
+                            <span class="value" id="metricTaskPending">0</span>
+                            <span class="label">待执行任务</span>
+                        </div>
+                        <div class="card-trend" id="metricTaskTotal">共 0 项</div>
+                    </div>
+
+                    <div class="metric-glass-card purple">
+                        <div class="card-icon">🤖</div>
+                        <div class="card-data">
+                            <span class="value" id="metricMission">0</span>
+                            <span class="label">无人机调度</span>
+                        </div>
+                        <div class="card-trend">累计任务</div>
+                    </div>
+                </div>
+
+                <!-- 下方栅格布局 -->
+                <div class="dashboard-grid">
+                    <!-- 趋势图表区 -->
+                    <section class="content-panel-glass chart-box">
+                        <div class="panel-header">
+                            <h3>识别准确率趋势</h3>
+                            <div class="panel-actions">
+                                <span>实时更新</span>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="accuracyChart"></canvas>
+                        </div>
+                    </section>
+
+                    <!-- 实时动态列表（来自灌溉、预警、任务、无人机调度） -->
+                    <section class="content-panel-glass queue-box">
+                        <div class="panel-header">
+                            <h3>实时动态</h3>
+                            <button class="btn-text" onclick="loadAdminDashboard()">刷新</button>
+                        </div>
+                        <div class="task-timeline" id="adminTaskTimeline">
+                            <div style="text-align:center; padding:40px; color:var(--text-dim);">正在加载...</div>
+                        </div>
+                    </section>
+                </div>
+
+            </div>
+
+            <!-- 灌溉建议页面 -->
+            <div class="admin-content" id="irrigationPage">
+                <div class="card-glass" style="max-width: 1100px; margin: 0 auto;">
+                    <div
+                        style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center;">
+                        <h2>灌溉建议</h2>
+                        <div style="display: flex; gap: 10px;">
+                            <span style="color: var(--accent); cursor: pointer;"
+                                onclick="loadAdminIrrigation()">刷新</span>
+                            <a href="/灌溉" class="btn-text" style="color:var(--primary);">去灌溉页生成</a>
+                        </div>
+                    </div>
+                    <div id="adminIrrigationList" style="max-height: 70vh; overflow-y: auto;">
+                        <div style="text-align:center; padding:40px; color:var(--text-dim);">正在加载...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 风险预警页面 -->
+            <div class="admin-content" id="riskPage">
+                <div class="card-glass" style="max-width: 1100px; margin: 0 auto;">
+                    <div
+                        style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center;">
+                        <h2>风险预警</h2>
+                        <div style="display: flex; gap: 10px;">
+                            <span style="color: var(--accent); cursor: pointer;" onclick="loadAdminRisk()">刷新</span>
+                            <a href="/病虫害" class="btn-text" style="color:var(--primary);">去病虫害页生成</a>
+                        </div>
+                    </div>
+                    <div id="adminRiskList" style="max-height: 70vh; overflow-y: auto;">
+                        <div style="text-align:center; padding:40px; color:var(--text-dim);">正在加载...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 无人机调度页面 -->
+            <div class="admin-content" id="missionPage">
+                <div class="card-glass" style="max-width: 1100px; margin: 0 auto;">
+                    <div
+                        style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center;">
+                        <h2>无人机调度</h2>
+                        <div style="display: flex; gap: 10px;">
+                            <span style="color: var(--accent); cursor: pointer;" onclick="loadAdminMission()">刷新</span>
+                            <a href="/果园地图" class="btn-text" style="color:var(--primary);">去果园地图生成</a>
+                        </div>
+                    </div>
+                    <div id="adminMissionList" style="max-height: 70vh; overflow-y: auto;">
+                        <div style="text-align:center; padding:40px; color:var(--text-dim);">正在加载...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 任务列表页面 -->
+            <div class="admin-content" id="taskPage">
+                <div class="card-glass" style="max-width: 1100px; margin: 0 auto;">
+                    <div
+                        style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; flex-wrap: wrap; gap: 12px;">
+                        <h2>任务列表</h2>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <span id="adminDroneStatus" style="font-size: 0.85rem; color: var(--text-dim);">空闲 - | 执行中 -
+                                | 充电 -</span>
+                            <button class="btn-modal btn-modal-primary" id="btnBatchAssign"
+                                style="padding: 8px 20px;">一键分派</button>
+                            <span style="color: var(--accent); cursor: pointer;" onclick="loadAdminTask()">刷新</span>
+                            <a href="/任务规划" class="btn-text" style="color:var(--primary);">去任务规划创建</a>
+                        </div>
+                    </div>
+                    <div id="adminTaskList" style="max-height: 70vh; overflow-y: auto;">
+                        <div style="text-align:center; padding:40px; color:var(--text-dim);">正在加载...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 历史记录页面（套用移动端样式） -->
+            <div class="admin-content" id="historyPage">
+                <div class="card-glass" style="max-width: 1100px; margin: 0 auto;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                        <h2>最近记录</h2>
+                        <div style="display: flex; gap: 10px;">
+                            <span style="color: var(--accent); cursor: pointer;"
+                                onclick="refreshAdminHistory()">刷新</span>
+                            <span style="color: var(--accent); cursor: pointer;">筛选日期 ▼</span>
+                        </div>
+                    </div>
+
+                    <div class="history-list" id="adminHistoryList">
+                        <!-- 历史记录将通过JavaScript动态加载 -->
+                    </div>
+                </div>
+
+                <div style="text-align: center; color: var(--text-dim); padding: 40px;">
+                    <p id="adminHistoryBottomText">--- 已加载全部历史记录 ---</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+
+</html>

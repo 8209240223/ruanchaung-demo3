@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册 - 智慧农业</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+
+<body>
+    <div class="bg-decoration">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+    <div class="auth-page">
+        <div class="auth-card">
+            <h1>注册</h1>
+            <p class="auth-sub">创建账号后即可使用全部功能</p>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+            <div class="auth-flash auth-flash--{{ cat }}">{{ msg }}</div>
+            {% endfor %}
+            {% endwith %}
+            <form method="post" action="{{ url_for('register') }}" autocomplete="on">
+                <div class="auth-field">
+                    <label for="username">用户名</label>
+                    <input id="username" name="username" type="text" required minlength="2" maxlength="32" autofocus
+                        placeholder="2～32 位，字母数字下划线或中文">
+                </div>
+                <div class="auth-field">
+                    <label for="email">邮箱（选填）</label>
+                    <input id="email" name="email" type="email" maxlength="120" placeholder="name@example.com">
+                </div>
+                <div class="auth-field">
+                    <label for="password">密码</label>
+                    <input id="password" name="password" type="password" required minlength="8" placeholder="至少 8 位">
+                </div>
+                <div class="auth-field">
+                    <label for="password2">确认密码</label>
+                    <input id="password2" name="password2" type="password" required minlength="8" placeholder="再次输入密码">
+                </div>
+                <button type="submit" class="auth-submit">注册</button>
+            </form>
+            <p class="auth-footer">已有账号？<a href="{{ url_for('login') }}">登录</a></p>
+        </div>
+    </div>
+</body>
+
+</html>
